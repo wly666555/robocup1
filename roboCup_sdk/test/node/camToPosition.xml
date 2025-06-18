@@ -1,0 +1,8 @@
+<root BTCPP_format="4" >
+    <BehaviorTree ID="MainTree">
+    <Sequence name="root_sequence">
+        <camToPosition  name="rotating the G1 head servo to a specific angle" joint0_angle="0.0" joint1_angle="10.0" duration="500"/>
+        <!-- <camToPosition  name="rotating the G1 head servo to home angle" joint0_angle="0.0" joint1_angle="0.0" duration="500"/> -->
+    </Sequence>
+    </BehaviorTree>
+</root>

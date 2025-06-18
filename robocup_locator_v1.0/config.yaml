@@ -1,0 +1,10 @@
+field_size: kid
+playerStartPos: left
+location_mode: normal
+
+servo:
+  pitch_compensation: -45
+  yaw_compensation: 0
+  height: 1.3
+odometry:
+  scale_factor: 1.4

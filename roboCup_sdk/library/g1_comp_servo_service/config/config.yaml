@@ -1,0 +1,11 @@
+dt: 0.015
+vel_limit: 2
+
+kp: [500, 500]
+kd: [300, 300]
+
+direction:
+  default: [1, -1]
+
+dds:
+  network: wlx0013eff30cd1
