@@ -1,0 +1,27 @@
+<root BTCPP_format="4" >
+   <include path="./subtree_cam_find_and_track_ball.xml" />
+   <BehaviorTree ID="StrikerFreekick">
+      <ReactiveSequence>
+         <ReactiveSequence _while="gc_is_sub_state_kickoff_side" name="move to start posittion">
+            <SelfLocate mode="trust_direction" _while="odom_calibrated" />
+            <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated"/>
+            <StrikerDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="0.9" />
+            <RobotFindBall _while="decision == 'find'" vyaw_limit="1.5" />
+            <Chase _while="decision == 'chase'" vx_limit="1.0" vy_limit="0.4" vtheta_limit="0.3" dist="0.9"/>
+            <Adjust _while="decision == 'adjust'"  max_range="0.9" min_range="0.4" turn_threshold="0.15" vy_limit="0.6" vtheta_limit="1.0" vx_limit="0.2" />
+            <SetVelocity _while="decision == 'kick'" />
+         </ReactiveSequence>
+         <ReactiveSequence _while="!gc_is_sub_state_kickoff_side" name="move to defensive position">
+            <SelfLocate mode="trust_direction" _while="odom_calibrated" />
+            <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated"/>
+            <StrikerDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.5" />
+            <RobotFindBall _while="decision == 'find'" vyaw_limit="1.5" />
+            <Chase _while="decision == 'chase'" vx_limit="1.0" vy_limit="0.4" vtheta_limit="0.3" dist="1.5"/>
+            <Adjust _while="decision == 'adjust'"  max_range="2.0" min_range="1.5" turn_threshold="0.3" vy_limit="0.6" vtheta_limit="1.0" vx_limit="0.2" position="defense"/>
+            <SetVelocity _while="decision == 'kick'" />
+            <!-- <CamScanField /> 
+            <MoveToPoseOnField x="-3.0" y = "0" /> -->
+         </ReactiveSequence>
+      </ReactiveSequence>
+   </BehaviorTree>
+</root>
