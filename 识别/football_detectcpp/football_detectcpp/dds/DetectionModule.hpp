@@ -148,7 +148,7 @@ template <> constexpr bool TopicTraits<::DetectionModule::DetectionResult>::isKe
 {
   return true;
 }
-//为DDS类型发现提供二进制描述信息
+//为DDS类型发现机制提供二进制描述信息
 #ifdef DDSCXX_HAS_TYPE_DISCOVERY
 template<> constexpr unsigned int TopicTraits<::DetectionModule::DetectionResult>::type_map_blob_sz() { return 574; }
 template<> constexpr unsigned int TopicTraits<::DetectionModule::DetectionResult>::type_info_blob_sz() { return 100; }
