@@ -92,4 +92,4 @@ propvec &get_type_props<::DetectionModule::DetectionResults>() {
 } //namespace cyclonedds
 } //namespace eclipse
 } //namespace org
-
+//DetectionModule.cpp 的核心用途是为 DDS 分布式通信自动生成类型属性描述信息，确保自定义检测结果类型（如目标检测框、置信度、类别等）能够在 DDS 网络中安全、高效地序列化和传输。
