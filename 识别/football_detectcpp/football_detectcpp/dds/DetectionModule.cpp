@@ -29,7 +29,7 @@ propvec &get_type_props<::DetectionModule::DetectionResult>() {
       (ptr++)->is_present = false;
     return props;
   }
-  //双重检查锁模式，防止多线程下重复初始化
+  //双重检查锁模式，防止多线程下重复初始化【上锁并二次检查初始化】
   std::lock_guard<std::mutex> lock(mtx);
   if (initialized.load(std::memory_order_relaxed)) {
     auto ptr = props.data();
