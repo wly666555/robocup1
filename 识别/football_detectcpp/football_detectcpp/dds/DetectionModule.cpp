@@ -6,27 +6,30 @@
   Cyclone DDS: v0.10.5
 
 *****************************************************************/
-#include "DetectionModule.hpp"
-
+#include "DetectionModule.hpp"//引入头文件，为下文类和函数提供声明
+//采用多重命名空间组织代码，防止命名冲突
 namespace org{
 namespace eclipse{
+
 namespace cyclonedds{
 namespace core{
 namespace cdr{
-
+//模板特化函数
 template<>
 propvec &get_type_props<::DetectionModule::DetectionResult>() {
-  static thread_local std::mutex mtx;
-  static thread_local propvec props;
-  static thread_local entity_properties_t *props_end = nullptr;
-  static thread_local std::atomic_bool initialized {false};
-  key_endpoint keylist;
+  static thread_local std::mutex mtx;//定义4个静态线程局部变量；mtx：互斥锁，保证多线程安全初始化
+  static thread_local propvec props;//prop:保存属性描述的容器，每个线程有独立副本
+  static thread_local entity_properties_t *props_end = nullptr;//指向props最后一个元素的下一个位置
+  static thread_local std::atomic_bool initialized {false};//标记props是否已经初始化过
+  key_endpoint keylist;//声明key_endpoint类型变量keylist，用于后续finish调用
+  //如果已经初始化，则仅重置is_present为false，然后返回
   if (initialized.load(std::memory_order_relaxed)) {
     auto ptr = props.data();
     while (ptr < props_end)
       (ptr++)->is_present = false;
     return props;
   }
+  //双重检查锁模式，防止多线程下重复初始化
   std::lock_guard<std::mutex> lock(mtx);
   if (initialized.load(std::memory_order_relaxed)) {
     auto ptr = props.data();
@@ -34,6 +37,7 @@ propvec &get_type_props<::DetectionModule::DetectionResult>() {
       (ptr++)->is_present = false;
     return props;
   }
+  //清空属性向量，依次为DetectionResult类型每个成员添加属性描述
   props.clear();
 
   props.push_back(entity_properties_t(0, 0, false, bb_unset, extensibility::ext_final));  //root
@@ -45,9 +49,9 @@ propvec &get_type_props<::DetectionModule::DetectionResult>() {
   props.push_back(entity_properties_t(1, 5, false, get_bit_bound<float>(), extensibility::ext_final, false));  //::offset
   props.push_back(entity_properties_t(1, 6, false, get_bit_bound<float>(), extensibility::ext_final, false));  //::offset_fov
 
-  entity_properties_t::finish(props, keylist);
-  props_end = props.data() + props.size();
-  initialized.store(true, std::memory_order_release);
+  entity_properties_t::finish(props, keylist);//finsh完成属性结构封装
+  props_end = props.data() + props.size();//记录props_end
+  initialized.store(true, std::memory_order_release);//设置initialized为true
   return props;
 }
 
@@ -73,7 +77,7 @@ propvec &get_type_props<::DetectionModule::DetectionResults>() {
   }
   props.clear();
 
-  props.push_back(entity_properties_t(0, 0, false, bb_unset, extensibility::ext_appendable));  //root
+  props.push_back(entity_properties_t(0, 0, false, bb_unset, extensibility::ext_appendable));  //root“可追加”拓展性
   props.push_back(entity_properties_t(1, 0, false, bb_unset, extensibility::ext_final, false));  //::results
   entity_properties_t::append_struct_contents(props, get_type_props<::DetectionModule::DetectionResult>());  //internal contents of ::results
 
