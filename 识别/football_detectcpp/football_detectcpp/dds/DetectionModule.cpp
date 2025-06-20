@@ -77,9 +77,9 @@ propvec &get_type_props<::DetectionModule::DetectionResults>() {
   }
   props.clear();
 
-  props.push_back(entity_properties_t(0, 0, false, bb_unset, extensibility::ext_appendable));  //root“可追加”拓展性
-  props.push_back(entity_properties_t(1, 0, false, bb_unset, extensibility::ext_final, false));  //::results
-  entity_properties_t::append_struct_contents(props, get_type_props<::DetectionModule::DetectionResult>());  //internal contents of ::results
+  props.push_back(entity_properties_t(0, 0, false, bb_unset, extensibility::ext_appendable));  //为root增加“可追加”拓展性
+  props.push_back(entity_properties_t(1, 0, false, bb_unset, extensibility::ext_final, false));  //::results不可被拓展
+  entity_properties_t::append_struct_contents(props, get_type_props<::DetectionModule::DetectionResult>());  //internal contents of ::results将result结构体内字段属性加到props中，实现嵌套
 
   entity_properties_t::finish(props, keylist);
   props_end = props.data() + props.size();
