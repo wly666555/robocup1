@@ -31,13 +31,13 @@ void Locator::detectProcessMarkings(const vector<GameObject> &markingObjs)
     {
         auto marking = markingObjs[i];
 
-        if (marking.confidence < confidenceValve)
+        if (marking.confidence < confidenceValve)// 如果置信度低于阈值，则跳过该标记
             continue;
 
-        if (marking.posToRobot.x < -0.5 || marking.posToRobot.x > 10.0)
+        if (marking.posToRobot.x < -0.5 || marking.posToRobot.x > 10.0)//如果标记的x坐标小于-0.5或大于10.0，则跳过该标记
             continue;
 
-        markings.push_back(marking);
+        markings.push_back(marking);// 将标记添加到标记列表中
     }
 }
 
@@ -87,13 +87,13 @@ void Locator::processDetections(const std::vector<::DetectionModule::DetectionRe
     {
         const auto &obj = gameObjects[i];
         if (obj.label == "Ball")
-            balls.push_back(obj);
+            balls.push_back(obj);//如果检测到的目标是足球，则将其添加到balls列表中
         if (obj.label == "Goalpost")
-            goalPosts.push_back(obj);
+            goalPosts.push_back(obj);//如果检测到的目标是球门柱，则将其添加到goalPosts列表中
         if (obj.label == "Person")
-            persons.push_back(obj);
+            persons.push_back(obj);//如果检测到的目标是队员，则将其添加到persons列表中？
         if (obj.label == "Opponent")
-            robots.push_back(obj);
+            robots.push_back(obj);//如果检测到的目标是对方队员，则将其添加到robots列表中
         if (obj.label == "L" || obj.label == "T" || obj.label == "X") {
             // 目前仅识别L,T,X
             markings.push_back(obj);
@@ -133,13 +133,13 @@ void Locator::selfLocate() {
     auto markers = getMarkers();
     if (markers.size() < 3) {
         return;
-    }
+    }// 如果标记点数量少于3个，则无法进行定位
 
     double xMin = 0.0, xMax = 0.0, yMin = 0, yMax = 0.0, thetaMin = 0.0, thetaMax = 0.0;
     
     std::string mode = config.ReadStringFromYaml("location_mode");
 
-    if (mode == "enter_field")
+    if (mode == "enter_field")//进场模式，约束机器人只能在场地一侧的特定区域
     {
 
         xMin = -fd.length / 2;
@@ -169,7 +169,7 @@ void Locator::selfLocate() {
             thetaMax = M_PI / 2 + M_PI / 6;
         }
     }
-    else if (mode == "face_forward")
+    else if (mode == "face_forward")//正对球场：允许在整个场地范围内，朝向在 ±45°
     {
         xMin = -fd.length / 2;
         xMax = fd.length / 2;
@@ -178,7 +178,7 @@ void Locator::selfLocate() {
         thetaMin = -M_PI / 4;
         thetaMax = M_PI / 4;
     }
-    else if (mode == "center" || (mode == "normal" && !odomCalibrated))
+    else if (mode == "center" || (mode == "normal" && !odomCalibrated))//未校准：允许在半场范围，朝向在 ±90°。
     {
         xMin = -0.5; // TODO: 目前只测试半场
         xMax = fd.length / 2;
@@ -187,7 +187,7 @@ void Locator::selfLocate() {
         thetaMin = -M_PI / 2;
         thetaMax = M_PI / 2;
     }
-    else if (mode == "normal" && odomCalibrated)
+    else if (mode == "normal" && odomCalibrated)//允许在上次定位结果附近一定范围内，范围随时间漂移增大，防止误差积累。
     {
         int msec = msecsSince(lastSuccessfulLocalizeTime);
         double maxDriftSpeed = 0.2; // 假设每秒最大偏差0.2米
@@ -206,26 +206,27 @@ void Locator::selfLocate() {
 
     // Locate
     PoseBox2D constraints{xMin, xMax, yMin, yMax, thetaMin, thetaMax};
-    auto res = pf_locator -> locateRobot(markers, constraints);
-
+    auto res = pf_locator -> locateRobot(markers, constraints);// 通过粒子滤波器定位机器人在场地上的位置，传入标记点和约束条件。
+    //粒子滤波会在约束范围内生成大量假设位姿（粒子），通过与实际观测到的标记进行匹配，最终收敛到最可能的机器人位姿。
     // 0: Success
-    // 1: Failure to generate new particles (quantity is 0)
-    // 2: The residual error after convergence is unreasonable
-    // 3: Not converged
-    // 4: The number of Markers is insufficient
-    // 5: The probabilities of all particles are too low
+    // 1: Failure to generate new particles (quantity is 0)粒子生成失败
+    // 2: The residual error after convergence is unreasonable 收敛后残差过大
+    // 3: Not converged 未收敛
+    // 4: The number of Markers is insufficient  标记点数量不足
+    // 5: The probabilities of all particles are too low 所有粒子概率过低
     std::cout << "locate result: res: " << to_string(res.code) << " time: " << to_string(res.msecs) << std::endl;
 
     if (res.success) {
-        calibrateOdom(res.pose.x, res.pose.y, res.pose.theta);
+        calibrateOdom(res.pose.x, res.pose.y, res.pose.theta);// 如果定位成功，则调用calibrateOdom函数进行里程计校准。
         odomCalibrated = true;
-        lastSuccessfulLocalizeTime = std::chrono::high_resolution_clock::now();
+        lastSuccessfulLocalizeTime = std::chrono::high_resolution_clock::now();// 更新上次成功定位的时间戳。
     }
     
+    //打印定位得到的场地坐标（x, y, theta，theta已转为角度）和本次定位耗时
     std::cout << "locate success: " << to_string(res.pose.x) << " " << to_string(res.pose.y) << " " + to_string(rad2deg(res.pose.theta)) << " Dur: " << to_string(res.msecs) << std::endl;
 }
 
-void Locator::calibrateOdom(double x, double y, double theta)
+void Locator::calibrateOdom(double x, double y, double theta)// 该函数用于校准里程计，将机器人在场地坐标系中的位置和朝向转换为里程计坐标系中的位置和朝向。
 {
     // Calculate odomToField according to robotToOdom(by odometry) and robotToField(by locator)
     double x_or, y_or, theta_or; // or = odom to robot
