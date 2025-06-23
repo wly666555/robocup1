@@ -108,7 +108,7 @@ void DisplayBoard::displayRobotPose(double x, double y, double theta) {
     cv::Mat debug_field_copy = debug_field.clone();
     
     // display robot position
-    cv::Point center(x * scale_factor + board_width / 2, - y * scale_factor + board_height / 2);
+    cv::Point center(x * scale_factor + board_width / 2, - y * scale_factor + board_height / 2);// 计算机器人在显示板上的位置: 计算方法是将机器人的位置坐标乘以缩放因子，并加上显示板的中心位置。
 
     int vector_length = 10;
     auto pt0 = rotateVector(vector_length, vector_length, theta);

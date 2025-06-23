@@ -22,14 +22,14 @@ class MotorState_
 {
 private:
  uint8_t mode_ = 0;
- float q_ = 0.0f;
- float dq_ = 0.0f;
- float ddq_ = 0.0f;
- float tau_est_ = 0.0f;
- float q_raw_ = 0.0f;
- float dq_raw_ = 0.0f;
- float ddq_raw_ = 0.0f;
- uint8_t temperature_ = 0;
+ float q_ = 0.0f;//电机的实际位置
+ float dq_ = 0.0f; //电机的实际速度
+ float ddq_ = 0.0f; //电机的实际加速度
+ float tau_est_ = 0.0f; //电机的估计扭矩
+ float q_raw_ = 0.0f; //电机的原始位置
+ float dq_raw_ = 0.0f; //电机的原始速度
+ float ddq_raw_ = 0.0f; //电机的原始加速度
+ uint8_t temperature_ = 0; //电机的温度
  uint32_t lost_ = 0;
  std::array<uint32_t, 2> reserve_ = { };
 

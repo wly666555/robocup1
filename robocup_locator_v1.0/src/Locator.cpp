@@ -43,7 +43,7 @@ void Locator::detectProcessMarkings(const vector<GameObject> &markingObjs)
 
 
 void Locator::processDetections(const std::vector<::DetectionModule::DetectionResult> &detection_results, const Pose &p_eye2base) {
-
+ // 该函数处理检测结果，将检测到的目标转换为GameObject对象，并计算其在机器人的坐标系和场地坐标系中的位置。
 
 
     std::vector<GameObject> gameObjects;
