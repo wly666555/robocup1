@@ -1,0 +1,17 @@
+module DetectionModule {
+    @final
+    struct DetectionResult {
+        string class_id;
+        string class_name;
+        float box[4];    
+        float score;     
+        float xyz[3];    
+        float offset[2]; 
+        float offset_fov[2]; 
+    };
+
+    @appendable
+    struct DetectionResults {
+        sequence<DetectionResult> results;
+    };
+};

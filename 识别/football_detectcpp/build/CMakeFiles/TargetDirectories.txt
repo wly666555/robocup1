@@ -1,0 +1,4 @@
+/home/unitree/Videos/football_detectcpp/build/CMakeFiles/rebuild_cache.dir
+/home/unitree/Videos/football_detectcpp/build/CMakeFiles/edit_cache.dir
+/home/unitree/Videos/football_detectcpp/build/CMakeFiles/sub.dir
+/home/unitree/Videos/football_detectcpp/build/CMakeFiles/football_detect.dir

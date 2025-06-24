@@ -1,0 +1,8 @@
+module LocationModule {
+    @final
+    struct LocationResult {
+        float robot2field_x;
+        float robot2field_y;
+        float robot2field_theta;
+    };
+};
