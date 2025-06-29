@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     // 这里使用了unitree::robot::SubscriptionBase模板类来创建订阅者对象，模板参数指定了消息类型为unitree_go::msg::dds_::MotorStates_。
     std::shared_ptr<unitree::robot::SubscriptionBase<unitree_go::msg::dds_::MotorStates_>> servoState;
     servoState = std::make_shared<unitree::robot::SubscriptionBase<unitree_go::msg::dds_::MotorStates_>>("rt/g1_comp_servo/state");
-    servoState->msg_.states().resize(2); //存储两个电机的状态信息
+    servoState->msg_.states().resize(2); //存储两个舵机的状态信息
 
     // Create wrist Subscriber：lowState是一个订阅者对象，用于接收来自"rt/lowstate"主题的LowState消息。机器人底层状态：imu姿态，电机状态等
     std::shared_ptr<unitree::robot::SubscriptionBase<unitree_hg::msg::dds_::LowState_>> lowState;
@@ -88,7 +88,8 @@ int main(int argc, char *argv[])
     double odometry_factor = config.ReadFloatFromYaml("odometry", "scale_factor"); // 从配置文件中读取里程计的缩放因子，用于将里程计数据转换为实际的位置信息。
     double servo_pitch_compensation = config.ReadFloatFromYaml("servo", "pitch_compensation"); // 从配置文件中读取伺服电机的俯仰补偿值，用于调整伺服电机的姿态。
     double servo_yaw_compensation = config.ReadFloatFromYaml("servo", "yaw_compensation"); // 从配置文件中读取伺服电机的偏航补偿值，用于调整伺服电机的姿态。
-    double servo_height = config.ReadFloatFromYaml("servo", "height"); // 从配置文件中读取伺服电机的高度，用于计算伺服电机相对于机器人的位置。
+    double servo_height = config.ReadFloatFromYaml("servo", "height"); // 从配置文件中读取摄像头舵机的高度，用于计算摄像头舵机相对于机器人的位置。
+
 
     while (true) {// 主循环，持续运行定位任务
 
@@ -105,10 +106,14 @@ int main(int argc, char *argv[])
 
         // Read servo data
         double wrist_yaw_angle = rad2deg(lowState->msg_.motor_state()[JointIndex::kWaistYaw].q()); // 从lowstate中读取腰部偏航角度，并转换为度数。
-        double servo_yaw_angle = servoState -> msg_.states()[0].q(); // 从servoState中读取伺服电机的偏航角度。
-        double servo_pitch_angle = servoState -> msg_.states()[1].q() + servo_pitch_compensation; // 从servoState读取伺服电机的俯仰角度，并加上补偿值。
+        double servo_yaw_angle = servoState -> msg_.states()[0].q(); // 从servoState中读取摄像头舵机的偏航角度。
+        double servo_pitch_angle = servoState -> msg_.states()[1].q() + servo_pitch_compensation; // 从servoState读取摄像头舵机的俯仰角度，并加上补偿值。
 	    Pose p_eye2base = Pose(0, -servo_height, 0, deg2rad(servo_pitch_angle), -deg2rad(wrist_yaw_angle) - deg2rad(servo_yaw_angle), 0) ; 
-        // 创建一个Pose对象p_eye2base，表示伺服电机相对于机器人的位置和姿态。这里的参数包括位置坐标和姿态角度。
+        // 创建一个Pose对象p_eye2base，表示摄像头舵机eye相对于机器人base的位置和姿态。这里的参数包括位置坐标和姿态角度。
+        // 位置坐标为(0, -servo_height, 0)，表示摄像头舵机在机器人base坐标系下的高度为servo_height
+        // 姿态角度为(deg2rad(servo_pitch_angle), -deg2rad(wrist_yaw_angle) - deg2rad(servo_yaw_angle), 0)， 
+        // 表示摄像头舵机的俯仰角度为servo_pitch_angle，偏航角度为wrist_yaw_angle - servo_yaw_angle，绕y轴旋转。
+        //Pose(const float &x, const float &y, const float &z,const float &roll, const float &pitch, const float &yaw);
 	
         // 输出伺服电机的角度信息
         std::cout << "Servo information: "
@@ -123,7 +128,7 @@ int main(int argc, char *argv[])
                 const auto& det_results = sample.data().results(); // 获取检测结果中的目标信息
                 std::cout << "===== Received " << det_results.size() << " detection results =====\n";// 输出检测结果的数量
                 if (det_results.size() > 0) { // 如果检测结果中有目标信息
-                    locator.processDetections(det_results, p_eye2base); // 调用Locator对象的processDetections方法，处理检测结果和伺服电机相对于机器人的位置和姿态。
+                    locator.processDetections(det_results, p_eye2base); // 详见函数！调用Locator对象的processDetections方法，处理检测结果和伺服电机相对于机器人的位置和姿态。
                     locator.selfLocate(); // 调用Locator对象的selfLocate方法，进行自我定位。
                 }   
             }

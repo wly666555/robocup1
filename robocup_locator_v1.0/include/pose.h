@@ -5,8 +5,8 @@
 
 struct Pose {
 public:
-    Pose() = default;
-    Pose(const float &x, const float &y, const float &z,
+    Pose() = default;x, const float &y, const float &z,
+    Pose(const float &
          const float &roll, const float &pitch, const float &yaw);
     Pose(cv::Mat &pose) :
         mat_pose(pose){};

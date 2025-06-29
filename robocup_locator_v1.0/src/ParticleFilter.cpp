@@ -343,9 +343,9 @@ LocateResult ParticleFilter::locateRobot(vector<FieldMarker> markers_r, PoseBox2
     offsetY = offsetYParam;
     offsetTheta = offsetThetaParam;
 
-    genInitialParticles(numParticles);
+    genInitialParticles(numParticles);//在约束范围内生成 numParticles 个随机粒子（每个粒子代表一个可能的机器人位姿）
 
-    if (calcProbs(markers_r))
+    if (calcProbs(markers_r))//计算每个粒子的概率（概率越高，粒子越可能接近真实位姿）
     {
         res.success = false;
         res.code = 5;
@@ -355,22 +355,22 @@ LocateResult ParticleFilter::locateRobot(vector<FieldMarker> markers_r, PoseBox2
 
     for (int i = 0; i < maxIteration; i++)
     {
-        if (isConverged())
+        if (isConverged())//判断粒子是否收敛
         {
             std::cout << "bestResidual: " << bestResidual<<endl;
             res.residual = bestResidual / markers_r.size();
             std::cout << "res.residual: " << res.residual<<endl;
-            if (res.residual > residualTolerance)
+            if (res.residual > residualTolerance)// 如果平均残差大于容忍度，返回错误
             {       
                 res.success = false;
                 res.code = 2;
                 res.msecs = msecsSince(start_time);
                 return res;
             }
-
+            // 如果收敛且平均残差小于容忍度，返回成功结果
             res.success = true;
             res.code = 0;
-            res.pose = bestPose;
+            res.pose = bestPose;// 将最佳位姿赋值给结果
             res.pose.theta = toPInPI(res.pose.theta);
             res.msecs = msecsSince(start_time);
             return res;
