@@ -131,13 +131,17 @@ BT::NodeStatus BackToPosition::tick()
     Eigen::Vector2d homePositionInPelvis = dehomoVec(_interface->homoMatPelvisToField.inverse() * homoVec(Eigen::Vector2d(0, 0)));
 
     // 设置目标位置容差
-    const double positionTolerance = 0.1;  // 10厘米
+    const double positionTolerance = 0.3;  // 30厘米
     const double angleTolerance = 0.1;    // 约5.7度
 
     // 检查是否已到达中心点
     if((abs(homePositionInPelvis(0)) <= positionTolerance) && 
        (abs(homePositionInPelvis(1)) <= positionTolerance))
     {
+        while(!_interface->ballDetected){
+            _interface->locoClient.Move(0, 0, 0.1);
+        }
+        
         _interface->locoClient.Move(0, 0, 0);
         return BT::NodeStatus::SUCCESS;
     }
@@ -264,7 +268,7 @@ BT::NodeStatus kick::tick()
     rightGoalField(0) = 4.5;
     rightGoalField(1) = -2.6 / 2;
 
-    double margin = 0.3;
+    double margin = 0.05;
 
     Vec2<double> vecBallLeftGoalField;
     vecBallLeftGoalField(0) = leftGoalField(0) - _interface->ballPositionInField(0);
@@ -317,34 +321,22 @@ BT::NodeStatus kick::tick()
 
 BT::NodeStatus camTrackBall::tick()//基于fov偏移量
 {
-    if (!_interface->ballDetected)
-    {
-        return BT::NodeStatus::SUCCESS;
-    }
-    while(_interface->ballDetected){
-        float fov_x = _interface->ball_offset_fov(0);
-        float fov_y = _interface->ball_offset_fov(1);
+   
+    float fov_x = _interface->ball_offset_fov(0);
+    float fov_y = _interface->ball_offset_fov(1);
 
-        yaw_angle_add = fov_x * 0.6;
-        pitch_angle_add = (fov_y + 0.3 ) * 0.6; //0.3可修改
+    yaw_angle_add = fov_x * 0.6;
+    pitch_angle_add = (fov_y + 0.3 ) * 0.6; //0.3可修改
 
-        float control_yaw = _interface->servoState->msg_.states()[0].q()-yaw_angle_add;
-        float control_pitch = _interface->servoState->msg_.states()[1].q()+pitch_angle_add;
+    float control_yaw = _interface->servoState->msg_.states()[0].q()-yaw_angle_add;
+    float control_pitch = _interface->servoState->msg_.states()[1].q()+pitch_angle_add;
 
-        _interface->servoCmd->msg_.cmds()[0].mode() = 1;
-        _interface->servoCmd->msg_.cmds()[0].q() = control_yaw;
-        _interface->servoCmd->msg_.cmds()[1].mode() = 1;
-        _interface->servoCmd->msg_.cmds()[1].q() = control_pitch;
-        _interface->servoCmd->unlockAndPublish();
-
-        // std::cout << "ball_offset_fov(0): " << _interface->ball_offset_fov(0) << std::endl;
-        // std::cout << "ball_offset_fov(1): " << _interface->ball_offset_fov(1) << std::endl;
-        // std::cout << "ball_offset(0): " << _interface->ball_offset(0) << std::endl;
-        // std::cout << "ball_offset(1): " << _interface->ball_offset(1) << std::endl;
-
-        // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    }
+    _interface->servoCmd->msg_.cmds()[0].mode() = 1;
+    _interface->servoCmd->msg_.cmds()[0].q() = control_yaw;
+    _interface->servoCmd->msg_.cmds()[1].mode() = 1;
+    _interface->servoCmd->msg_.cmds()[1].q() = control_pitch;
+    _interface->servoCmd->unlockAndPublish();
+ 
     return BT::NodeStatus::SUCCESS;
 }
 
