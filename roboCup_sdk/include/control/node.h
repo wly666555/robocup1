@@ -166,6 +166,20 @@ private:
     Interface *_interface;
 };
 
+
+class BackToPosition : public BT::SyncActionNode
+{
+public:
+    BackToPosition(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+        : BT::SyncActionNode(name, config), _interface(interface)
+    {}
+
+    BT::NodeStatus tick() override;
+
+private:
+    Interface *_interface;
+};
+
 class robotTrackField : public BT::SyncActionNode
 {
 public:

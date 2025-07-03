@@ -1,5 +1,15 @@
 #include "control/node.h"
 
+#include <thread>  // 添加该头文件
+#include <chrono>  // 添加该头文件
+
+
+// #include <cmath>
+
+// // 角度转换辅助函数
+// inline double deg2rad(double deg) { return deg * M_PI / 180.0; }
+// inline double rad2deg(double rad) { return rad * 180.0 / M_PI; }
+
 BT::NodeStatus camToPosition::tick()
 {
     double joint0_angle, joint1_angle, duration;
@@ -32,6 +42,7 @@ BT::NodeStatus camToPosition::tick()
 
 BT::NodeStatus camFindBall::tick()
 {
+
     if (!_interface->ballDetected)
     {
         if (firstRun)
@@ -59,11 +70,20 @@ BT::NodeStatus camFindBall::tick()
         return BT::NodeStatus::SUCCESS;
     }
 
+    // 限位角度：单位是弧度（45度 = π/4）
+    constexpr float Y_SERVO_MIN = -M_PI / 3.0f; // 最小俯视角
+    constexpr float Y_SERVO_MAX =  M_PI / 6.0f; // 最大仰角：30度
+
+
     interpolator.interpolate(targetAngle);
 
     _interface->servoCmd->msg_.cmds()[0].mode() = 1;
     _interface->servoCmd->msg_.cmds()[0].q() = targetAngle(0);
-    _interface->servoCmd->msg_.cmds()[1].mode() = 1;
+
+
+    // 舵机y轴限位
+    float limitedY = std::clamp(targetAngle(1), Y_SERVO_MIN, Y_SERVO_MAX);
+    _interface->servoCmd->msg_.cmds()[1].mode() = 1; 
     _interface->servoCmd->msg_.cmds()[1].q() = targetAngle(1);
     _interface->servoCmd->unlockAndPublish();
 
@@ -103,6 +123,47 @@ BT::NodeStatus robotTrackPelvis::tick()
 
         _interface->locoClient.Move(vx, vy,vyaw);
     }
+    return BT::NodeStatus::SUCCESS;
+}
+BT::NodeStatus BackToPosition::tick()
+{
+    // 计算机器人骨盆坐标系中的场中心位置
+    Eigen::Vector2d homePositionInPelvis = dehomoVec(_interface->homoMatPelvisToField.inverse() * homoVec(Eigen::Vector2d(0, 0)));
+
+    // 设置目标位置容差
+    const double positionTolerance = 0.1;  // 10厘米
+    const double angleTolerance = 0.1;    // 约5.7度
+
+    // 检查是否已到达中心点
+    if((abs(homePositionInPelvis(0)) <= positionTolerance) && 
+       (abs(homePositionInPelvis(1)) <= positionTolerance))
+    {
+        _interface->locoClient.Move(0, 0, 0);
+        return BT::NodeStatus::SUCCESS;
+    }
+
+    // 计算向场中心移动的速度
+    double vx = homePositionInPelvis(0);  // x方向误差
+    double vy = homePositionInPelvis(1);  // y方向误差
+
+    // 使用PD控制器计算速度
+    const double kp = 0.5;  // 比例增益
+    const double maxSpeed = 0.6;  // 最大速度
+    
+    vx *= kp;
+    vy *= kp;
+    
+    // 限制速度
+    vx = saturation(vx, Vec2<double>(-maxSpeed, maxSpeed));
+    vy = saturation(vy, Vec2<double>(-maxSpeed, maxSpeed));
+
+    // 可选：添加朝向控制
+    double targetYaw = atan2(homePositionInPelvis(1), homePositionInPelvis(0));
+    double vyaw = targetYaw;  // 简单的朝向控制
+    vyaw = saturation(vyaw, Vec2<double>(-0.3, 0.3));
+
+    // 发送移动命令
+    _interface->locoClient.Move(vx, vy, vyaw);
     return BT::NodeStatus::SUCCESS;
 }
 
@@ -254,40 +315,103 @@ BT::NodeStatus kick::tick()
    return BT::NodeStatus::SUCCESS;
 }
 
-
-
-BT::NodeStatus camTrackBall::tick()
+BT::NodeStatus camTrackBall::tick()//基于fov偏移量
 {
     if (!_interface->ballDetected)
     {
         return BT::NodeStatus::SUCCESS;
     }
+    while(_interface->ballDetected){
+        float fov_x = _interface->ball_offset_fov(0);
+        float fov_y = _interface->ball_offset_fov(1);
 
-    float fov_x = _interface->ball_offset_fov(0);
-    float fov_y = _interface->ball_offset_fov(1);
+        yaw_angle_add = fov_x * 0.6;
+        pitch_angle_add = (fov_y + 0.3 ) * 0.6; //0.3可修改
 
-    yaw_angle_add = fov_x * 0.6;
-    pitch_angle_add = fov_y * 0.6;
+        float control_yaw = _interface->servoState->msg_.states()[0].q()-yaw_angle_add;
+        float control_pitch = _interface->servoState->msg_.states()[1].q()+pitch_angle_add;
 
-    float control_yaw = _interface->servoState->msg_.states()[0].q()-yaw_angle_add;
-    float control_pitch = _interface->servoState->msg_.states()[1].q()-pitch_angle_add;
+        _interface->servoCmd->msg_.cmds()[0].mode() = 1;
+        _interface->servoCmd->msg_.cmds()[0].q() = control_yaw;
+        _interface->servoCmd->msg_.cmds()[1].mode() = 1;
+        _interface->servoCmd->msg_.cmds()[1].q() = control_pitch;
+        _interface->servoCmd->unlockAndPublish();
 
-    _interface->servoCmd->msg_.cmds()[0].mode() = 1;
-    _interface->servoCmd->msg_.cmds()[0].q() = control_yaw;
-    _interface->servoCmd->msg_.cmds()[1].mode() = 1;
-    _interface->servoCmd->msg_.cmds()[1].q() = control_pitch;
-    _interface->servoCmd->unlockAndPublish();
+        // std::cout << "ball_offset_fov(0): " << _interface->ball_offset_fov(0) << std::endl;
+        // std::cout << "ball_offset_fov(1): " << _interface->ball_offset_fov(1) << std::endl;
+        // std::cout << "ball_offset(0): " << _interface->ball_offset(0) << std::endl;
+        // std::cout << "ball_offset(1): " << _interface->ball_offset(1) << std::endl;
 
+        // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    }
     return BT::NodeStatus::SUCCESS;
 }
+
+/*基于像素追踪,未完成*/
+
+// BT::NodeStatus camTrackBall::tick()
+// {
+//     if (!_interface->ballDetected)
+//     {
+//         return BT::NodeStatus::SUCCESS;
+//     }
+
+//     // 硬编码相机参数（Realsense D455i）
+//     const double image_width = 640.0;      // 图像宽度（像素）
+//     const double image_height = 480.0;     // 图像高度（像素）
+//     const double horizontal_fov = 86.0;    // 水平视场角（度）
+//     const double vertical_fov = 57.0;      // 垂直视场角（度）
+    
+//     // 控制参数（可调整）
+//     const double pixTolerance = 10.0;      // 像素容差
+//     const double smoother = 1.5;           // 平滑因子
+//     const double frameTimeFactor = 0.5;    // 帧时间因子
+    
+//     // 获取球在图像中的像素偏移（相对于图像中心）
+//     float deltaX = _interface->ball_offset(0);  // 水平偏移
+//     float deltaY = _interface->ball_offset(1);  // 垂直偏移
+
+//     // 检查球是否已在视野中央
+//     if (std::fabs(deltaX) < pixTolerance && std::fabs(deltaY) < pixTolerance)
+//     {
+//         return BT::NodeStatus::SUCCESS;
+//     }
+
+//     // 将视场角转换为弧度
+//     double hfov_rad = horizontal_fov * M_PI / 180.0;
+//     double vfov_rad = vertical_fov * M_PI / 180.0;
+    
+//     // 计算偏航和俯仰调整量（弧度）
+//     double deltaYaw = (deltaX / image_width) * hfov_rad * frameTimeFactor / smoother;
+//     double deltaPitch = (deltaY / image_height) * vfov_rad * frameTimeFactor / smoother;
+
+//     // 获取当前舵机角度（度）
+//     float currentYaw = _interface->servoState->msg_.states()[0].q();
+//     float currentPitch = _interface->servoState->msg_.states()[1].q();
+    
+//     // 计算新的目标角度（度）
+//     float targetYaw = currentYaw - rad2deg(deltaYaw);
+//     float targetPitch = currentPitch + rad2deg(deltaPitch);
+
+//     // 发送舵机控制命令
+//     _interface->servoCmd->msg_.cmds()[0].mode() = 1;  // 位置模式
+//     _interface->servoCmd->msg_.cmds()[0].q() = targetYaw;
+//     _interface->servoCmd->msg_.cmds()[1].mode() = 1;
+//     _interface->servoCmd->msg_.cmds()[1].q() = targetPitch;
+//     _interface->servoCmd->unlockAndPublish();
+
+//     return BT::NodeStatus::SUCCESS;//RUNNING
+// }
 
 BT::NodeStatus playerDecision::tick()
 {
     std::string decision;
     bool goalSignal;
-    if(_interface->ballPositionInField(0)>4.5) // Here, we simply treat the situation where the ball’s x-direction distance in the Field coordinate system is greater than 4.5 as a goal signal.
+    if(_interface->ballPositionInField(0)> 4.5) // Here, we simply treat the situation where the ball’s x-direction distance in the Field coordinate system is greater than 4.5 as a goal signal.
     {
-        goalSignal = true;
+        // goalSignal = true;
+        goalSignal = false; 
     }
     else
     {

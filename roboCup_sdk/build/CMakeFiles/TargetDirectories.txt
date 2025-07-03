@@ -1,0 +1,9 @@
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/CMakeFiles/edit_cache.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/CMakeFiles/rebuild_cache.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/CMakeFiles/test_camToPosition.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/CMakeFiles/test_camTrackBall.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/CMakeFiles/test_camFindBall.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/CMakeFiles/test_findAndTrackBall.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/CMakeFiles/halfFieldKickExample.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/CMakeFiles/edit_cache.dir
+/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/cmake_install.cmake",
+		"/home/c/Documents/GitHub/robocup1/roboCup_sdk/build/test/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
