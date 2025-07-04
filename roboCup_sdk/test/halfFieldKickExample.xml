@@ -1,11 +1,12 @@
 <root BTCPP_format="4" >
     <BehaviorTree ID="MainTree">
-    <Sequence name="root_sequence">
+    <ReactiveSequence name="root_sequence">
         <playerDecision  name="playerDecision" decision="{decision}"/>
         <camTrackBall  name="camTrackBall"/>
         <camFindBall  name="camFindBall" _while="decision == 'camFindBall'"/>
         <robotTrackField  name="robotTrackField" _while="decision == 'robotTrackField'"/>
         <kick  name="kick" _while="decision == 'kick'"/>
-    </Sequence>
+        <BackToPosition  name="back" _while="decision == 'stop'"/>
+    </ReactiveSequence>
     </BehaviorTree>
 </root>

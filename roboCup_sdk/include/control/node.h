@@ -30,6 +30,10 @@ using namespace unitree::robot::g1;
 
 #include <stdint.h>
 
+
+extern bool goal_wly ;
+
+
 template <typename T>
 void registerNode(BT::BehaviorTreeFactory& factory, const std::string& id, Interface* interface)
 {
@@ -166,6 +170,20 @@ private:
     Interface *_interface;
 };
 
+
+class BackToPosition : public BT::SyncActionNode
+{
+public:
+    BackToPosition(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+        : BT::SyncActionNode(name, config), _interface(interface)
+    {}
+
+    BT::NodeStatus tick() override;
+
+private:
+    Interface *_interface;
+};
+
 class robotTrackField : public BT::SyncActionNode
 {
 public:
@@ -207,6 +225,19 @@ public:
             BT::OutputPort<std::string>("decision", "decision string")
         };
     }
+
+    BT::NodeStatus tick() override;
+private:
+    Interface *_interface;
+    bool goalSignal;
+};
+
+class test : public BT::SyncActionNode
+{
+public:
+    test(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+        : BT::SyncActionNode(name, config), _interface(interface)
+    {}
 
     BT::NodeStatus tick() override;
 private:

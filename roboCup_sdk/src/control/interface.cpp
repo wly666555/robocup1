@@ -113,9 +113,10 @@ void Interface::compute_ball_position(RotMat<double>rotMatPelvisToGlobal,double 
     double y = homoMatBallToWorldAligned(1,3);
     double z = homoMatBallToWorldAligned(2,3);
     double length = std::sqrt(x * x + y * y + z * z);
-    if((length < 0.25) || (z >= -0.25)) // todo add score 
+    if((length < 0.15) || (z >= -0.25)) // todo add score 
     {
-
+        std::cout << "高度" << z << "/"
+            << "，长度" << length << std::endl;
     }
     else
     {

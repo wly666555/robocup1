@@ -1,0 +1,10 @@
+/home/unitree/robocup1-master/roboCup_sdk/build/CMakeFiles/rebuild_cache.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/CMakeFiles/edit_cache.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/rebuild_cache.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/halfFieldKickExample.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/edit_cache.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/test_findAndTrackBall.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/test_camTrackBall.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/Back_test.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/test_camFindBall.dir
+/home/unitree/robocup1-master/roboCup_sdk/build/test/CMakeFiles/test_camToPosition.dir

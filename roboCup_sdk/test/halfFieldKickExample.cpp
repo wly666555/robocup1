@@ -19,7 +19,8 @@ int main(int argc, char const *argv[])
   registerNode<camTrackBall>(factory, "camTrackBall", &interface);
   registerNode<robotTrackField>(factory, "robotTrackField", &interface);
   registerNode<kick>(factory, "kick", &interface);
-  factory.registerBehaviorTreeFromFile("/home/unitree/roboCup_sdk/test/halfFieldKickExample.xml");
+  registerNode<BackToPosition>(factory, "BackToPosition", &interface);
+  factory.registerBehaviorTreeFromFile("/home/unitree/robocup1-master/roboCup_sdk/test/halfFieldKickExample.xml");
   auto tree = factory.createTree("MainTree");
   
   while(true)

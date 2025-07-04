@@ -33,5 +33,8 @@ target_link_libraries(test_findAndTrackBall unitree_sdk2 ddsc ddscxx rt pthread 
 add_executable(halfFieldKickExample halfFieldKickExample.cpp ${SRC_LIST})
 target_link_libraries(halfFieldKickExample unitree_sdk2 ddsc ddscxx rt pthread behaviortree_cpp)
 
+add_executable(Back_test Back_test.cpp ${SRC_LIST})
+target_link_libraries(Back_test unitree_sdk2 ddsc ddscxx rt pthread behaviortree_cpp)
+
 
 

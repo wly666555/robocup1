@@ -1,0 +1,7 @@
+<root BTCPP_format="4" >
+    <BehaviorTree ID="MainTree">
+    <ReactiveSequence name="root_sequence">
+        <BackToPosition  name="BackToPosition"/>
+    </ReactiveSequence>
+    </BehaviorTree>
+</root>
