@@ -1,0 +1,8 @@
+app
+
+# cpp
+build
+
+# python
+*.pyc
+__pycache__

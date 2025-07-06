@@ -1,0 +1,9 @@
+<root BTCPP_format="4" >
+    <BehaviorTree ID="MainTree">
+    <Sequence name="root_sequence">
+        <camFindBall  name="camFindBall"/>
+        <camTrackBall  name="camTrackBall"/>
+        <robotTrackPelvis  name="robotTrackPelvis"/>
+    </Sequence>
+    </BehaviorTree>
+</root>
