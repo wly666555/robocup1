@@ -191,10 +191,10 @@ void G1Brain::updateMemory() {
 
 void G1Brain::updateBallMemory() {
     Quat<double> quat;
-    quat << torsoImu->msg_.quaternion()[0],  // x 
-            torsoImu->msg_.quaternion()[1],  // y 
-            torsoImu->msg_.quaternion()[2],  // z 
-            torsoImu->msg_.quaternion()[3];  // w 
+    quat << data->cur_imu.quaternion()[0],  // x 
+            data->cur_imu.quaternion()[1],  // y 
+            data->cur_imu.quaternion()[2],  // z 
+            data->cur_imu.quaternion()[3];  // w 
     rotMatPelvisToGlobal = quatToRotMat(quat);
 
     RotMat<double>rotMatPelvisToGlobal,double waist_yaw_q, double servo0_q, double servo1_q, Vec3<double> ball_position_in_cam;
@@ -268,7 +268,10 @@ void G1Brain::lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr 
                     deg2rad(servo_pitch_angle),
                     -deg2rad(wrist_yaw_angle) - deg2rad(servo_yaw_angle),
                     0);
-
+    data->cur_imu.quaternion [0]= last_lowstate_.imu_state.quaternion[0];
+    data->cur_imu.quaternion [1]= last_lowstate_.imu_state.quaternion[1];
+    data->cur_imu.quaternion [2]= last_lowstate_.imu_state.quaternion[2];
+    data->cur_imu.quaternion [3]= last_lowstate_.imu_state.quaternion[3];
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
         "Servo information: wrist_yaw_angle(%.2f), servo_yaw_angle(%.2f), servo_pitch_angle(%.2f)",
         wrist_yaw_angle, servo_yaw_angle, servo_pitch_angle);
