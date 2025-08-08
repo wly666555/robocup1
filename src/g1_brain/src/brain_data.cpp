@@ -4,7 +4,6 @@
 #include "locate/pose.h"
 
 
-namespace g1_brain {
 
 std::vector<FieldMarker> Locator::getMarkers()
 {
@@ -59,6 +58,5 @@ RobotPose fieldToRobot(const RobotPose& poseToField, const RobotPose& robotPoseT
     return out;
 }
 
-} // namespace g1_brain
 
 
