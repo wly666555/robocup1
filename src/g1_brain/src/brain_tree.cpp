@@ -4,18 +4,8 @@
 #include <thread>
 #include <chrono>
 #include "brain_tree.h"
+#include "brain.h"
 
-/**
- * 这里使用宏定义来减少RegisterBuilder中的代码量
- * 展开REGISTER_BUILDER(Test)后的效果如下：
- * factory.registerBuilder<Test>(  \
- *      "Test",                    \
- *      [this](const string& name, const NodeConfig& config) { return make_unique<Test>(name, config, brain); }
- */
-#define REGISTER_BUILDER(Name)     \
-    factory.registerBuilder<Name>( \
-        #Name,                     \
-        [this](const string &name, const NodeConfig &config) { return make_unique<Name>(name, config, brain); });
 
 
 void BrainTree::init()

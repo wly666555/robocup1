@@ -6,77 +6,64 @@
 #include <string>
 #include <thread>
 #include <chrono>
-#include "robot_interfaces/msg/motor_cmd.hpp"
-#include "robot_interfaces/msg/motor_states.hpp"
-#include "robot_interfaces/msg/detection_result.hpp"
-#include "robot_interfaces/msg/detection_results.hpp"
-#include "robot_interfaces/msg/location_result.hpp"
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
+#include <behaviortree_cpp/behavior_tree.h>
+#include <behaviortree_cpp/bt_factory.h>
 
 #include "locate/math_utils.h"
 #include "locate/misc.h"
-
+#include <stdint.h>
 #include "locate/types.h"
 
-using namespace unitree::common;
-using namespace unitree::robot;
-using namespace unitree::robot::g1;
+using namespace std;
+using namespace BT;
 
-#include <stdint.h>
-
-extern bool goal_wly;
-
-template <typename T>
-void registerNode(BT::BehaviorTreeFactory& factory, const std::string& id, Interface* interface)
-{
-    factory.registerBuilder<T>(id, [interface](const std::string& name, const BT::NodeConfig& config) {
-        return std::make_unique<T>(name, config, interface);
-    });
-}
 
 class BrainTree {
 public:
+
+    BrainTree(Brain *argBrain) : brain(argBrain) {}
+
     void init();
-    void initEntry();
+
     void tick();
 
+    // get entry on blackboard
+    template <typename T>
+    inline T getEntry(const string &key)
+    {
+        T value = T();
+        [[maybe_unused]] auto res = tree.rootBlackboard()->get<T>(key, value);
+        return value;
+    }
 
-    template <typename T>//
-    void setEntry(const std::string& key, const T& value);//
-    
-    template <typename T>//
-    T getEntry(const std::string& key);//
-
-
-
+    // set entry on blackboard
+    template <typename T>
+    inline void setEntry(const string &key, const T &value)
+    {
+        tree.rootBlackboard()->set<T>(key, value);
+    }
 
 private:
-    void setEntry(const std::string& key, const auto& value) {
-        // Implementation would be here
-    }
-    template<typename T>
-    T getEntry(const std::string& key) {
-        // Implementation would be here
-        return T();
-    }
+    Tree tree;
+    Brain *brain;
 
-     Brain* brain;  // 添加Brain指针成员
-    BT::Tree tree; // 添加行为树对象
+    void initEntry();
+
 };
 
 
 class selfLocate : public BT::SyncActionNode {
 public:
-    selfLocate(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    SelfLocate(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
 };
 
 

@@ -4,24 +4,36 @@
 G1Brain::G1Brain() : Node("g1_brain") {
     RCLCPP_INFO(this->get_logger(), "G1Brain node created");
     
-    // 初始化组件
-    config = std::make_shared<BrainConfig>();
-    data = std::make_shared<BrainData>();
-    locator = std::make_shared<Locator>(this);
-    tree = std::make_shared<BehaviorTree>(this);
-    client = std::make_shared<RobotClient>(this);
-    log = std::make_shared<BrainLog>(this);
+    declare_parameter<string>("game.field_type", "");
+
+    declare_parameter<string>("game.player_role", "");
+    declare_parameter<string>("game.player_start_pos", "");
+
+    declare_parameter<double>("robot.robot_height", 1.0);
+    declare_parameter<double>("robot.odom_factor", 1.0);
+    declare_parameter<double>("robot.vx_factor", 0.95);
+    declare_parameter<double>("robot.yaw_offset", 0.1);
+
 }
 
 void G1Brain::init() {
-    declareParameters();
+    config = std::make_shared<BrainConfig>();
     loadConfig();
     
-    // 初始化各个组件
-    locator->init(fd, 3, 0.4, 0.5);
+    data = std::make_shared<BrainData>();
+    locator = std::make_shared<Locator>();
+
+    tree = std::make_shared<BrainTree>(this);
+    client = std::make_shared<RobotClient>(this);
+
+    // 初始化粒子滤波定位器
+    locator->init(config->fieldDimensions, 3, 0.4, 0.5);
+
+    // 构建 BehaviorTree
     tree->init();
+
+    // 初始化 client
     client->init();
-    log->prepare();
     
     // 创建订阅者
     motorStatesSubscription = this->create_subscription<robot_interfaces::msg::MotorStates>(
@@ -70,23 +82,6 @@ void G1Brain::tick() {
     updateMemory();
 }
 
-void G1Brain::declareParameters() {
-    // 游戏相关参数
-    this->declare_parameter<std::string>("game.field_size", "kid");
-    this->declare_parameter<std::string>("game.playerStartPos", "left");
-    this->declare_parameter<std::string>("game.location_mode", "normal");
-    // 机器人相关参数
-    this->declare_parameter<double>("robot.height", 1.3);
-    this->declare_parameter<double>("robot.scale_factor", 1.4);
-    this->declare_parameter<double>("robot.pitch_compensation", -45.0);
-    this->declare_parameter<double>("robot.yaw_compensation", 0.0);
-    // 记忆相关参数
-    this->declare_parameter<double>("memory.ball_memory_length", 5.0);
-    this->declare_parameter("field_length", 9.0);
-    this->declare_parameter("field_width", 6.0);
-    this->declare_parameter("goal_width", 2.6);
-    this->declare_parameter("memory_length", 5.0);
-}
 
 void G1Brain::loadConfig() {
     get_parameter("game.field_type", config->fieldType);

@@ -61,7 +61,6 @@ private:
     double servo_height_{0.0};
 
     // 参数声明
-    void declareParameters();
     void loadConfig();
     
     // 记忆更新
