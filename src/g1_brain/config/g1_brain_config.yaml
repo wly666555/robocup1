@@ -2,7 +2,7 @@ g1_brain_node:
   ros__parameters:
     # 游戏相关参数
     game:
-      field_size: kid
+      field_size: kid_size
       playerStartPos: left
       location_mode: normal
     

@@ -17,7 +17,7 @@
 #include "locate/yaml_parser.h"
 // 添加roboCup_sdk依赖
 #include <unitree/robot/g1/loco/g1_loco_client.hpp>
-
+#include "brain_config.h"
 #include "brain_tree.h"
 #include <cmath>
 #include <sstream>
@@ -26,114 +26,7 @@
 using namespace std::placeholders;
 using namespace unitree::robot::g1;
 
-/**
- * @brief 配置类
- * 存储系统配置参数
- */
-struct BrainConfig {
-    // 游戏相关参数
 
-    std::string field_size;
-    std::string location_mode;
-    std::string playerStartPos;
-    
-    // 机器人相关参数
-    double pitch_compensation;
-    double yaw_compensation;
-    double height;
-    double scale_factor;
-    
-    // 记忆相关参数
-    double memoryLength;  // 球位置记忆时间（秒）
-    
-    void handle() {
-        // 参数处理逻辑
-    }
-    
-    void print(std::ostringstream& oss) const {
-        oss << "field_size=" << field_size 
-            << ", location_mode=" << location_mode 
-            << ", playerStartPos=" << playerStartPos;
-    }
-};
-
-/**
- * @brief 数据存储类
- * 存储系统运行时的数据
- */
-struct BrainData {
-    // 机器人状态
-    RobotPose robotPoseToField;
-    RobotPose robotPoseToOdom;
-    double headYaw = 0.0;
-    double headPitch = 0.0;
-    
-    // 球信息
-    Ball ball;
-    bool ballDetected = false;
-    double robotBallAngleToField = 0.0;
-    
-    // 检测对象
-    std::vector<GameObject> markings;
-    std::vector<GameObject> opponents;
-    std::vector<GameObject> goalposts;
-    
-    // 时间相关
-    rclcpp::Time lastSuccessfulLocalizeTime;
-};
-
-/**
- * @brief 机器人客户端类
- * 负责发送控制命令
- */
-class RobotClient {
-public:
-    RobotClient(rclcpp::Node* node);
-    ~RobotClient() = default;
-    
-    void init();
-    void setVelocity(double vx, double vy, double omega);
-    void moveHead(double yaw, double pitch);
-    
-    // 获取当前头部位置
-    double getCurrentHeadYaw() const { return currentHeadYaw_; }
-    double getCurrentHeadPitch() const { return currentHeadPitch_; }
-    
-private:
-    rclcpp::Node* node_;
-    rclcpp::Publisher<robot_interfaces::msg::MotorCmd>::SharedPtr motor_cmd_pub_;
-    rclcpp::Subscription<robot_interfaces::msg::MotorStates>::SharedPtr motor_states_sub_;
-    
-    // 添加LocoClient用于本体控制
-    std::unique_ptr<LocoClient> locoClient_;
-    
-    double currentHeadYaw_;
-    double currentHeadPitch_;
-    
-    void motorStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg);
-};
-
-/**
- * @brief 日志类（简化版）
- */
-class BrainLog {
-public:
-    BrainLog(rclcpp::Node* node);
-    
-    void prepare();
-    bool isEnabled() const { return enabled_; }
-    void setTimeNow();
-    void setTimeSeconds(double time);
-    
-    template<typename T>
-    void log(const std::string& path, const T& data) {
-        // 占位符实现
-    }
-    
-private:
-    rclcpp::Node* node_;
-    bool enabled_;
-};
 
 /**
  * @brief 宇树机器人足球系统核心大脑节点

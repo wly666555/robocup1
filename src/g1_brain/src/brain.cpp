@@ -89,7 +89,7 @@ void G1Brain::declareParameters() {
 }
 
 void G1Brain::loadConfig() {
-    config->field_size = this->get_parameter("game.field_size").as_string();
+    get_parameter("game.field_type", config->fieldType);
     config->playerStartPos = this->get_parameter("game.playerStartPos").as_string();
     config->location_mode = this->get_parameter("game.location_mode").as_string();
 
