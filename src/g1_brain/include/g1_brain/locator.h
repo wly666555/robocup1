@@ -10,8 +10,12 @@
 #include <limits>
 #include <cmath>
 #include <chrono>
-
-#include "types.h"
+#include "robot_interfaces/msg/motor_cmd.hpp"
+#include "robot_interfaces/msg/motor_states.hpp"
+#include "robot_interfaces/msg/detection_result.hpp"
+#include "robot_interfaces/msg/detection_results.hpp"
+#include "robot_interfaces/msg/location_result.hpp"
+#include "locate/types.h"
 
 // #define EPSILON 1e-5
 

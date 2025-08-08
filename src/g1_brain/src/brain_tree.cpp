@@ -1,15 +1,9 @@
 #include <cmath>
-#include "control/node.h"
 #include <algorithm>
 #include <string>
 #include <thread>
 #include <chrono>
-#include "brain_data.h"
-#include "robot_interfaces/msg/motor_cmd.hpp"
-#include "robot_interfaces/msg/motor_cmds.hpp"
-#include "robot_interfaces/msg/motor_state.hpp"
-#include "robot_interfaces/msg/motor_states.hpp"
-#include "brain.h"
+#include "brain_tree.h"
 
 /**
  * 这里使用宏定义来减少RegisterBuilder中的代码量
@@ -34,7 +28,6 @@ void BrainTree::init()
     REGISTER_BUILDER(Kick)
     REGISTER_BUILDER(CamTrackBall)
     REGISTER_BUILDER(CamFindBall)
-    REGISTER_BUILDER(CamScanField)
     REGISTER_BUILDER(SetVelocity)
     REGISTER_BUILDER(robotTrackField)
 
@@ -221,9 +214,9 @@ NodeStatus CamTrackBall::tick()
     float control_pitch = motor_states->states[1].q//+pitch_angle_add;
 
     motor_cmds->states[0].mode = 1;
-    motor_cmds->states(0).q = control_yaw;
+    motor_cmds->states[0].q = control_yaw;
     motor_cmds->states[1].mode = 1;
-    motor_cmds->states(1).q = control_pitch;
+    motor_cmds->states[1].q = control_pitch;
     motor_cmd_publisher_->publish(*motor_cmds);
     return NodeStatus::SUCCESS;
 }
@@ -260,12 +253,12 @@ NodeStatus CamFindBall::tick()
 
     
     motor_cmds->states[0].mode = 1;  // 位置模式
-    motor_cmds->states(0).q= targetAngle(0);//目标位置
+    motor_cmds->states[0].q= targetAngle(0);//目标位置
 
     
     float limitedY = std::clamp(targetAngle(1), Y_SERVO_MIN, Y_SERVO_MAX);
-     motor_cmds->states(1).mode= 1;  // 位置模式
-     motor_cmds->states(1).q= limitedY;
+     motor_cmds->states[1].mode= 1;  // 位置模式
+     motor_cmds->states[1].q= limitedY;
 
     motor_cmd_publisher_->publish(*motor_cmds);
 

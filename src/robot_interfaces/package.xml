@@ -15,6 +15,7 @@
   <!-- 必须的依赖项 -->
   <depend>builtin_interfaces</depend>  <!-- 用于 Time 类型 -->
   <depend>std_msgs</depend>
+
   
   <member_of_group>rosidl_interface_packages</member_of_group>
 

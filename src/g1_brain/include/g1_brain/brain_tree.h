@@ -6,27 +6,20 @@
 #include <string>
 #include <thread>
 #include <chrono>
-#include <unitree/robot/g1/loco/g1_loco_api.hpp>
-#include <unitree/robot/g1/loco/g1_loco_client.hpp>
-#include <behaviortree_cpp/behavior_tree.h>
-#include <behaviortree_cpp/bt_factory.h>
+#include "robot_interfaces/msg/motor_cmd.hpp"
+#include "robot_interfaces/msg/motor_states.hpp"
+#include "robot_interfaces/msg/detection_result.hpp"
+#include "robot_interfaces/msg/detection_results.hpp"
+#include "robot_interfaces/msg/location_result.hpp"
+#include <geometry_msgs/msg/pose2_d.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
 
-#include <unitree/idl/go2/MotorCmds_.hpp>
-#include <unitree/idl/go2/MotorStates_.hpp>
+#include "locate/math_utils.h"
+#include "locate/misc.h"
 
-#include "unitree/idl/hg/LowState_.hpp"
-#include "unitree/idl/hg/LowCmd_.hpp"
-
-#include "dds/Publisher.h"
-#include "dds/Subscription.h"
-
-#include <unitree/common/thread/thread.hpp>
-#include "control/interface.h"
-
-#include "common/mathTools.h"
-#include "common/mathTypes.h"
-
-#include "common/types.h"
+#include "locate/types.h"
 
 using namespace unitree::common;
 using namespace unitree::robot;

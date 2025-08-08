@@ -2,7 +2,6 @@
 
 #include <string>
 #include <mutex>
-
 #include "locator.h"
 
 using namespace std;
@@ -25,7 +24,7 @@ public:
     // Head position, updated through lowStateCallback
     double headPitch; // The current head pitch, in radians. 0 is horizontal forward, positive is downward.
     double headYaw;   // The current head yaw, in radians. 0 is forward, positive is left.
-    robotinterfaces::msg::IMUState cur_imu;
+    robot_interfaces::msg::IMUState cur_imu;
     // Ball
     bool ballDetected = false;    // Whether the camera has detected the ball
     GameObject ball;              // Records the ball's information, including position, bounding box, etc.

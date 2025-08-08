@@ -4,30 +4,24 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <map>
 #include <any>
 
 #include "rclcpp/rclcpp.hpp"
-#include "robot_interfaces/msg/motor_cmd.hpp"
-#include "robot_interfaces/msg/motor_states.hpp"
-#include "robot_interfaces/msg/detection_result.hpp"
-#include "robot_interfaces/msg/detection_results.hpp"
-#include "robot_interfaces/msg/location_result.hpp"
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include "types.h"
 #include "locator.h"
-#include "pose.h"
-#include "yaml_parser.h"
+#include "locate/pose.h"
+#include "locate/yaml_parser.h"
 // 添加roboCup_sdk依赖
 #include <unitree/robot/g1/loco/g1_loco_client.hpp>
 
-#include "g1_brain/tree.hpp"
+#include "brain_tree.h"
 #include <cmath>
 #include <sstream>
-#include "math_utils.h"
+#include "locate/math_utils.h"
 
 using namespace std::placeholders;
 using namespace unitree::robot::g1;

@@ -1,6 +1,8 @@
-#include "g1_brain/data_utils.hpp"
-#include "g1_brain/math.h"
+#include "brain_data.h"
 #include <cmath>
+#include "locate/math_utils.h"
+#include "locate/pose.h"
+
 
 namespace g1_brain {
 

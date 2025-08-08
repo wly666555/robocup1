@@ -14,6 +14,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(robot_interfaces REQUIRED)
 find_package(unitree_sdk2 REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 # 包含头文件目录
 include_directories(include)
@@ -30,21 +32,23 @@ link_directories(${CMAKE_SOURCE_DIR}/../roboCup_sdk/lib/x86_64)
 link_directories(${CMAKE_SOURCE_DIR}/../roboCup_sdk/lib/aarch64)
 
 # 创建可执行文件
-add_executable(g1_brain_node 
+add_executable(g1_brain 
     src/main.cpp 
     src/brain.cpp 
     src/locator.cpp 
-    src/tree.cpp
+    src/brain_tree.cpp
 )
 
 # 链接依赖库
-ament_target_dependencies(g1_brain_node
+ament_target_dependencies(g1_brain
   rclcpp
   robot_interfaces
+  nav_msgs
+  geometry_msgs
 )
 
 # 链接roboCup_sdk库
-target_link_libraries(g1_brain_node
+target_link_libraries(g1_brain
   behaviortree_cpp
   unitree_sdk2
   ddsc
