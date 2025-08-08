@@ -32,7 +32,6 @@ private:
     double currentHeadYaw_;
     double currentHeadPitch_;
 
-    void motorStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg);
 };
 
 #endif // G1_BRAIN_CLIENT_HPP

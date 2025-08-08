@@ -11,12 +11,7 @@ void RobotClient::init() {
     locoClient_->Init();
     locoClient_->SetTimeout(10.0f);
 
-    motor_cmd_pub_ = node_->create_publisher<robot_interfaces::msg::MotorCmds>(
-        "rt/g1_comp_servo/cmd", 10);
 
-    motor_states_sub_ = node_->create_subscription<robot_interfaces::msg::MotorStates>(
-        "rt/g1_comp_servo/state", 10,
-        std::bind(&RobotClient::motorStatesCallback, this, std::placeholders::_1));
 
     RCLCPP_INFO(node_->get_logger(), "RobotClient initialized with LocoClient for body control");
 }
@@ -56,15 +51,6 @@ void RobotClient::moveHead(double yaw, double pitch) {
     motor_cmds.states[1] = cmd_pitch;
 
     motor_cmd_pub_->publish(motor_cmds);
-}
-
-void RobotClient::motorStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg) {
-    if (!msg->states.empty()) {
-        currentHeadYaw_ = msg->states[0].q;
-        currentHeadPitch_ = 0.0;
-    }
-    RCLCPP_DEBUG(node_->get_logger(), "Head servo states: yaw=%.2f, pitch=%.2f",
-                 currentHeadYaw_, currentHeadPitch_);
 }
 
 

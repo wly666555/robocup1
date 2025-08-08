@@ -1,86 +1,6 @@
 #include "g1_brain/brain.hpp"
 
 
-
-RobotClient::RobotClient(rclcpp::Node* node) : node_(node), currentHeadYaw_(0.0), currentHeadPitch_(0.0) {
-    RCLCPP_INFO(node_->get_logger(), "RobotClient created");
-}
-
-void RobotClient::init() {
-    // 初始化LocoClient用于本体控制
-    locoClient_ = std::make_unique<LocoClient>();
-    locoClient_->Init();
-    locoClient_->SetTimeout(10.0f);
-    
-    // 创建发布者 - 使用g1_comp_servo_service的话题（仅用于头部控制）
-    motor_cmd_pub_ = node_->create_publisher<robot_interfaces::msg::MotorCmd>(
-        "rt/g1_comp_servo/cmd", 10);
-    
-    // 创建订阅者 - 订阅舵机状态
-    motor_states_sub_ = node_->create_subscription<robot_interfaces::msg::MotorStates>(
-        "rt/g1_comp_servo/state", 10,
-        std::bind(&RobotClient::motorStatesCallback, this, std::placeholders::_1));
-    
-    RCLCPP_INFO(node_->get_logger(), "RobotClient initialized with LocoClient for body control");
-}
-
-void RobotClient::setVelocity(double vx, double vy, double omega) {
-    // 使用LocoClient进行本体移动控制
-    RCLCPP_DEBUG(node_->get_logger(), "Set velocity: vx=%.2f, vy=%.2f, omega=%.2f", vx, vy, omega);
-    
-    // 限制速度范围，参考roboCup_sdk中的用法
-    vx = std::clamp(vx, -1.0, 1.0);
-    vy = std::clamp(vy, -1.0, 1.0);
-    omega = std::clamp(omega, -1.0, 1.0);
-    
-    // 使用LocoClient的Move方法进行本体控制
-    locoClient_->Move(vx, vy, omega);
-}
-
-void RobotClient::moveHead(double yaw, double pitch) {
-    // 控制头部舵机
-    RCLCPP_DEBUG(node_->get_logger(), "Move head: yaw=%.2f, pitch=%.2f", yaw, pitch);
-    
-    // 创建头部控制命令 - 使用正确的消息结构
-    auto motorCmd = robot_interfaces::msg::MotorCmd();
-    
-    // 设置头部舵机命令 - 简化版本，只控制yaw
-    motorCmd.mode = 1;  // 位置模式
-    motorCmd.q = yaw;  // yaw角度
-    motorCmd.kp = 500.0f;  // 位置增益
-    motorCmd.kd = 300.0f;  // 速度增益
-    motorCmd.tau = 0.0f;  // 力矩命令
-    
-    motor_cmd_pub_->publish(motorCmd);
-}
-
-void RobotClient::motorStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg) {
-    // 处理舵机状态回调
-    currentHeadYaw_ = msg->q;
-    currentHeadPitch_ = 0.0;  // 简化版本，假设pitch为0
-    
-    RCLCPP_DEBUG(node_->get_logger(), "Head servo states: yaw=%.2f, pitch=%.2f", 
-                 currentHeadYaw_, currentHeadPitch_);
-}
-
-BrainLog::BrainLog(rclcpp::Node* node) : node_(node), enabled_(false) {
-    RCLCPP_INFO(node_->get_logger(), "BrainLog created");
-}
-
-void BrainLog::prepare() {
-    // 占位符实现
-    RCLCPP_INFO(node_->get_logger(), "BrainLog prepared");
-}
-
-void BrainLog::setTimeNow() {
-    // 占位符实现
-}
-
-void BrainLog::setTimeSeconds(double time) {
-    (void)time;  // 避免未使用参数警告
-    // 占位符实现
-}
-
 G1Brain::G1Brain() : Node("g1_brain") {
     RCLCPP_INFO(this->get_logger(), "G1Brain node created");
     
@@ -115,6 +35,11 @@ void G1Brain::init() {
     lowstate_sub_ = this->create_subscription<robot_interfaces::msg::LowState>(
         "lowstate", 10, std::bind(&G1Brain::lowstateCallback, this, std::placeholders::_1));
     pose_pub_ = this->create_publisher<geometry_msgs::msg::Pose2D>("robot_pose", 10);
+    motor_cmd_pub_ = this->create_publisher<robot_interfaces::msg::MotorCmds>(
+        "rt/g1_comp_servo/cmd", 10);
+
+    motor_states_sub_ = this->create_subscription<robot_interfaces::msg::MotorStates>(
+        "rt/g1_comp_servo/state", 10,std::bind(&G1Brain::motorStatesCallback, this, std::placeholders::_1));
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(50),
         std::bind(&G1Brain::mainLoop, this));
@@ -278,7 +203,10 @@ void G1Brain::lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr 
 }
 
 void G1Brain::motorStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg) {
-    // 处理舵机状态回调
+    if (!msg->states.empty()) {
+        currentHeadYaw_ = msg->states[0].q;
+        currentHeadPitch_ = 0.0;
+    }// 处理舵机状态回调
     RCLCPP_DEBUG(this->get_logger(), "Received motor states");
 }
 
