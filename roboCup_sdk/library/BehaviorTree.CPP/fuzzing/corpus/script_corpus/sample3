@@ -1,2 +1,0 @@
-str : = 'hello';
-len(str)
