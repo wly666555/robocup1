@@ -9,7 +9,7 @@ RobotClient::RobotClient(rclcpp::Node* node)
 void RobotClient::init() {
     locoClient_ = std::make_unique<LocoClient>();
     locoClient_->Init();
-    locoClient_->SetTimeout(10.0f);
+    locoClient_->SetTimeout(10.0f);     //错误！！！！
 
 
 
