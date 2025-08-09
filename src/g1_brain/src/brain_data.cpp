@@ -31,32 +31,3 @@ std::vector<FieldMarker> Locator::getMarkers()
 
 
 
-RobotPose robotToField(const RobotPose& poseToRobot, const RobotPose& robotPoseToField) {
-    RobotPose out;
-    // 期望的是：pose_field = (robotPoseToField) ⊕ (poseToRobot)
-    g1_brain::math::transCoord(
-        robotPoseToField.x, robotPoseToField.y, robotPoseToField.theta,
-        poseToRobot.x, poseToRobot.y, poseToRobot.theta,
-        out.x, out.y, out.theta);
-    out.theta = g1_brain::math::normalizeAngle(out.theta);
-    return out;
-}
-
-RobotPose fieldToRobot(const RobotPose& poseToField, const RobotPose& robotPoseToField) {
-    // 计算 field->robot 的等效变换：先对 robotPoseToField 求逆
-    double xfr, yfr, thetafr;
-    g1_brain::math::invertPose(robotPoseToField.x, robotPoseToField.y, robotPoseToField.theta,
-                               xfr, yfr, thetafr);
-
-    RobotPose out;
-    // pose_robot = (T_robot<-field) ⊕ (pose_field)
-    g1_brain::math::transCoord(
-        xfr, yfr, thetafr,
-        poseToField.x, poseToField.y, poseToField.theta,
-        out.x, out.y, out.theta);
-    out.theta = g1_brain::math::normalizeAngle(out.theta);
-    return out;
-}
-
-
-
