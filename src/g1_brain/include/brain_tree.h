@@ -58,7 +58,7 @@ private:
 
 class selfLocate : public BT::SyncActionNode {
 public:
-    SelfLocate(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    SelfLocate(const string &name, const BrainConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -69,8 +69,7 @@ private:
 
 class Adjust : public BT::SyncActionNode {
 public:
-    Adjust(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    Adjust(const std::string& name, const BrainConfig& config, Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -80,8 +79,7 @@ private:
 
 class CamFindBall : public BT::SyncActionNode {
 public:
-    CamFindBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    CamFindBall(const std::string& name, const BrainConfig& config,Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -103,8 +101,7 @@ private:
 
 class CamTrackBall : public BT::SyncActionNode {
 public:
-    CamTrackBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    CamTrackBall(const std::string& name, const BrainConfig& config,Brain* _brain): SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -116,8 +113,7 @@ private:
 
 class robotTrackPelvis : public BT::SyncActionNode {
 public:
-    robotTrackPelvis(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    robotTrackPelvis(const std::string& name, const BrainConfig& config,Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -127,8 +123,7 @@ private:
 
 class robotTrackField : public BT::SyncActionNode {
 public:
-    robotTrackField(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    robotTrackField(const std::string& name, const BrainConfig& config,Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -138,8 +133,7 @@ private:
 
 class Kick : public BT::SyncActionNode {
 public:
-    Kick(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    Kick(const std::string& name, const BrainConfig& config,Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
    
     BT::NodeStatus tick() override;
 
@@ -149,8 +143,7 @@ private:
 
 class PrintMsg : public BT::SyncActionNode {
 public:
-    PrintMsg(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    PrintMsg(const std::string& name, const BrainConfig& config,Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -167,8 +160,7 @@ private:
 
 class SetVelocity : public BT::SyncActionNode {
 public:
-    SetVelocity(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface) {}
+    SetVelocity(const std::string& name, const BrainConfig& config,Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
