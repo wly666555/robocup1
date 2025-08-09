@@ -1,5 +1,5 @@
 #include "g1_brain/brain.hpp"
-
+#include "brain_data.h"
 
 G1Brain::G1Brain() : Node("g1_brain") {
     RCLCPP_INFO(this->get_logger(), "G1Brain node created");
@@ -107,6 +107,13 @@ void G1Brain::updateMemory() {
 }
 
 void G1Brain::updateBallMemory() {
+    Vec3<double> ball_global_pos = data->computeBallPosition(
+    rotMatPelvisToGlobal,
+    waist_yaw_q,
+    servo0_q,
+    servo1_q,
+    ball_position_in_cam
+    );
     if((length < 0.15) || (z >= -0.25)) // todo add score 
     {
         std::cout << "高度" << z << "/"
