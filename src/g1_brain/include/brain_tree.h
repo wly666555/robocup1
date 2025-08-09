@@ -74,7 +74,7 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
 };
 
 class CamFindBall : public BT::SyncActionNode {
@@ -84,7 +84,7 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
     Vec2f initAngle;
     Vec2f targetAngle;
     MultiStageInterpolator interpolator;
@@ -106,20 +106,11 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
     double yaw_angle_add = 0;
     double pitch_angle_add = 0;
 };
 
-class robotTrackPelvis : public BT::SyncActionNode {
-public:
-    robotTrackPelvis(const std::string& name, const BrainConfig& config,Brain* _brain) : SyncActionNode(name, config), brain(_brain) {}
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface* _interface;
-};
 
 class robotTrackField : public BT::SyncActionNode {
 public:
@@ -128,7 +119,7 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
 };
 
 class Kick : public BT::SyncActionNode {
@@ -138,7 +129,7 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
 };
 
 class PrintMsg : public BT::SyncActionNode {
@@ -155,7 +146,7 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
 };
 
 class SetVelocity : public BT::SyncActionNode {
@@ -174,7 +165,7 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Interface* _interface;
+    Brain *brain;
 };
 
 // 保留原有的MultiStageInterpolator定义
