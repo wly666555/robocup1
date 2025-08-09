@@ -99,7 +99,7 @@ void G1Brain::loadConfig() {
     servo_pitch_compensation_ = config->pitch_compensation;
     servo_yaw_compensation_ = config->yaw_compensation;
     servo_height_ = config->height;
-
+    config->handle();
 
     RCLCPP_INFO(this->get_logger(), "Configuration loaded");
 }
