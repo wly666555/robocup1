@@ -59,10 +59,7 @@ void G1Brain::init() {
 }
 
 void G1Brain::tick() {
-    // 更新定位
-    locator->update(data->markings);
-    data->robotPoseToField = locator->getRobotPose();
-    
+
     // 更新行为树状态
     tree->setRobotPose(data->robotPoseToField);
     tree->setBall(data->ball);
@@ -110,34 +107,6 @@ void G1Brain::updateMemory() {
 }
 
 void G1Brain::updateBallMemory() {
-    Quat<double> quat;
-    quat << data->cur_imu.quaternion()[0],  // x 
-            data->cur_imu.quaternion()[1],  // y 
-            data->cur_imu.quaternion()[2],  // z 
-            data->cur_imu.quaternion()[3];  // w 
-    rotMatPelvisToGlobal = quatToRotMat(quat);
-
-    RotMat<double>rotMatPelvisToGlobal,double waist_yaw_q, double servo0_q, double servo1_q, Vec3<double> ball_position_in_cam;
-
-    Vec3<double> _B2G_rpy = rotMatToRPY(rotMatPelvisToGlobal);       
-    RotMat<double> rotMatPelvisToGlobal_no_yaw = rpyToRotMat(_B2G_rpy(0),_B2G_rpy(1),0);
-    HomoMat<double> homoMatPelvisToWorldAligned = homoMatrix(Vec3<double>(0.0, 0.0, 0.0), rotMatPelvisToGlobal_no_yaw);
-    HomoMat<double> homoMatTorsoToPelvis = homoMatrix(Vec3<double>(-0.0039635, 0.0, 0.044), rotz(waist_yaw_q));
-    HomoMat<double> homoMat_head_servo_to_torso = homoMatrix(Vec3<double>(0.0039635, 0.0, -0.047), RotMat<double>(RotMat<double>::Identity()));
-    RotMat<double> rotMat_xl330_to_head_servo = roty(0.039968)* rotz(servo0_q);
-    HomoMat<double> homoMat_xl330_to_head_servo = homoMatrix(Vec3<double>(0.030518, 0.0, 0.52486), rotMat_xl330_to_head_servo);
-    HomoMat<double> homoMat_d455_to_xl330 = homoMatrix(Vec3<double>(0.0295, 0.0, 0.013), roty(servo1_q));
-    RotMat<double> rotMat_cam_to_d455 = roty(0.6981) * roty(1.5707) * rotz(-1.5707) ;
-    HomoMat<double> homoMat_cam_to_d455 = homoMatrix(Vec3<double>(0.04061, 0.01000, -0.02207), rotMat_cam_to_d455);
-    HomoMat<double> homoMat_ball_to_cam = homoMatrix(Vec3<double>(ball_position_in_cam(0), ball_position_in_cam(1), ball_position_in_cam(2)), RotMat<double>(RotMat<double>::Identity()) );
-
-    HomoMat<double> homoMatBallToWorldAligned =  homoMatPelvisToWorldAligned * homoMatTorsoToPelvis * homoMat_head_servo_to_torso  *  homoMat_xl330_to_head_servo * homoMat_d455_to_xl330 * homoMat_cam_to_d455 * homoMat_ball_to_cam;
-
-    double yaw_to_pelvis =  atan2(homoMatBallToWorldAligned(1,3),homoMatBallToWorldAligned(0,3));
-    double x = homoMatBallToWorldAligned(0,3);
-    double y = homoMatBallToWorldAligned(1,3);
-    double z = homoMatBallToWorldAligned(2,3);
-    double length = std::sqrt(x * x + y * y + z * z);
     if((length < 0.15) || (z >= -0.25)) // todo add score 
     {
         std::cout << "高度" << z << "/"

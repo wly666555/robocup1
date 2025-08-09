@@ -3,6 +3,7 @@
 #include <string>
 #include <mutex>
 #include "locator.h"
+#include "robot_interfaces/msg/imu_state.hpp"
 
 using namespace std;
 
@@ -28,6 +29,16 @@ public:
     // Ball
     bool ballDetected = false;    // Whether the camera has detected the ball
     GameObject ball;              // Records the ball's information, including position, bounding box, etc.
+    GameObject opponents;      
+    GameObject goalposts; 
+    GameObject markings;     
+    
     double robotBallAngleToField; // The angle between the robot's vector to the ball and the X-axis in the field coordinate system, (-PI, PI]
 
+    <double> computeBallPosition(
+        const RotMat<double>& rotMatPelvisToGlobal,
+        double waist_yaw_q,
+        double servo0_q,
+        double servo1_q,
+        const Vec3<double>& ball_position_in_cam);
 };
