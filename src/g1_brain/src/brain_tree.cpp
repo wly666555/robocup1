@@ -10,6 +10,11 @@
 #include "brain.h"
 
 // 注册节点时的宏（你可以用 lambda注册，见头文件说明）
+#define REGISTER_BUILDER(Name)     \
+    factory.registerBuilder<Name>( \
+        #Name,                     \
+        [this](const string &name, const NodeConfig &config) { return make_unique<Name>(name, config, brain); });
+
 
 void BrainTree::init()
 {
@@ -17,54 +22,17 @@ void BrainTree::init()
     // factory.registerBehaviorTreeFromFile(config_.treeFilePath);
 
     // Action Nodes
-    factory.registerBuilder<SelfLocate>(
-        "SelfLocate",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<SelfLocate>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
-    factory.registerBuilder<Adjust>(
-        "Adjust",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<Adjust>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
-    factory.registerBuilder<Kick>(
-        "Kick",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<Kick>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
-    factory.registerBuilder<CamTrackBall>(
-        "CamTrackBall",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<CamTrackBall>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
-    factory.registerBuilder<CamFindBall>(
-        "CamFindBall",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<CamFindBall>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
-    factory.registerBuilder<robotTrackField>(
-        "robotTrackField",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<robotTrackField>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
-    factory.registerBuilder<PrintMsg>(
-        "PrintMsg",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<PrintMsg>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
-    factory.registerBuilder<playerDecision>(
-        "playerDecision",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<playerDecision>(name, config, this->brain, *(this->brain->getConfig()));
-        }
-    );
+    REGISTER_BUILDER(Chase)
+    REGISTER_BUILDER(Adjust)
+    REGISTER_BUILDER(Kick)
+    REGISTER_BUILDER(CamTrackBall)
+    REGISTER_BUILDER(CamFindBall)
+    REGISTER_BUILDER(SelfLocate)
+    REGISTER_BUILDER(SetVelocity)
+    REGISTER_BUILDER(robotTrackField)
+    REGISTER_BUILDER(playerDecision)
+    // Action Nodes for debug
+    REGISTER_BUILDER(PrintMsg)
 
     factory.registerBehaviorTreeFromFile(this->brain->getConfig()->treeFilePath);   //!!
     tree = factory.createTree("CamFindAndTrackBall");
@@ -86,25 +54,15 @@ void BrainTree::initEntry()
     setEntry<bool>("gamecontroller_isKickOff", true);
     setEntry<bool>("gamecontroller_isKickOffExecuted", true);
 
-    setEntry<std::string>("gc_game_state", "");
-    setEntry<std::string>("gc_game_sub_state_type", "NONE");
-    setEntry<std::string>("gc_game_sub_state", "");
-    setEntry<bool>("gc_is_kickoff_side", false);
-    setEntry<bool>("gc_is_sub_state_kickoff_side", false);
-    setEntry<bool>("gc_is_under_penalty", false);
 
     setEntry<bool>("treat_person_as_robot", false);
     setEntry<int>("control_state", 0);
-    setEntry<bool>("B_pressed", false);
-
-    setEntry<bool>("we_just_scored", false);
-    setEntry<bool>("wait_for_opponent_kickoff", false);
 }
 
 void BrainTree::tick()
 {
-    tree.tickRoot();
-    RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "After tree.tickRoot()");
+    tree.tickOnce();
+    RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "After tree.tickOnce()");
 }
 
 // =================== 节点实现 ===================
