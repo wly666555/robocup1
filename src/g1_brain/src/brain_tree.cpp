@@ -66,7 +66,7 @@ void BrainTree::init()
         }
     );
 
-    factory.registerBehaviorTreeFromFile(this->brain->getConfig()->treeFilePath);
+    factory.registerBehaviorTreeFromFile(this->brain->getConfig()->treeFilePath);   //!!
     tree = factory.createTree("CamFindAndTrackBall");
 
     //init blackboard entry
