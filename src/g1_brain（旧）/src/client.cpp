@@ -1,4 +1,4 @@
-#include "client.hpp"
+#include "g1_brain/client.hpp"
 #include <algorithm>
 
 RobotClient::RobotClient(rclcpp::Node* node)
@@ -6,25 +6,24 @@ RobotClient::RobotClient(rclcpp::Node* node)
     RCLCPP_INFO(node_->get_logger(), "RobotClient created");
 }
 
-void RobotClient::init2() {
-    // locoClient_ = std::make_unique<LocoClient>();
-    // locoClient_->Init();
-    // locoClient_->SetTimeout(10.0f);
-    chassis_cmd_pub_ = node_->create_publisher<unitree_go::msg::PathPoint>("chassis_cmd", 10);
+void RobotClient::init() {
+    locoClient_ = std::make_unique<LocoClient>();
+    locoClient_->Init();
+    locoClient_->SetTimeout(10.0f);     //错误！！！！
+
+
+
     RCLCPP_INFO(node_->get_logger(), "RobotClient initialized with LocoClient for body control");
 }
 
 void RobotClient::setVelocity(double vx, double vy, double omega) {
-    unitree_go::msg::PathPoint cmd;
-    cmd.t_from_start = 0.0f; // 或者用当前时间戳
-    cmd.x = 0.0f;            // 目标位置（如果只控制速度可以不填）
-    cmd.y = 0.0f;
-    cmd.yaw = 0.0f;
-    cmd.vx = static_cast<float>(vx);
-    cmd.vy = static_cast<float>(vy);
-    cmd.vyaw = static_cast<float>(omega);
+    RCLCPP_DEBUG(node_->get_logger(), "Set velocity: vx=%.2f, vy=%.2f, omega=%.2f", vx, vy, omega);
 
-    chassis_cmd_pub_->publish(cmd);
+    vx = std::clamp(vx, -1.0, 1.0);
+    vy = std::clamp(vy, -1.0, 1.0);
+    omega = std::clamp(omega, -1.0, 1.0);
+
+    locoClient_->Move(vx, vy, omega);
 }
 
 void RobotClient::moveHead(double yaw, double pitch) {

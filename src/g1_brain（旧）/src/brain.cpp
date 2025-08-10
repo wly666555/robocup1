@@ -1,24 +1,18 @@
-#include "brain.h"
+#include "g1_brain/brain.hpp"
 #include "brain_data.h"
-#include "brain_tree.h"
-#include "robot_interfaces/msg/detection_result.hpp"
-#include "robot_interfaces/msg/detection_results.hpp"
-#include "robot_interfaces/msg/location_result.hpp"
-
 
 G1Brain::G1Brain() : Node("g1_brain") {
     RCLCPP_INFO(this->get_logger(), "G1Brain node created");
     
-    declare_parameter<std::string>("game.field_type", "");
-    declare_parameter<std::string>("game.playerStartPos", "left");
-    declare_parameter<std::string>("game.location_mode", "normal");
+    declare_parameter<string>("game.field_type", "");
 
-    declare_parameter<double>("robot.height", 1.3);
-    declare_parameter<double>("robot.scale_factor", 1.4);
-    declare_parameter<double>("robot.pitch_compensation", -45.0);
-    declare_parameter<double>("robot.yaw_compensation", 0.0);
+    declare_parameter<string>("game.player_role", "");
+    declare_parameter<string>("game.player_start_pos", "");
 
-    declare_parameter<double>("memory.ball_memory_length", 5.0);
+    declare_parameter<double>("robot.robot_height", 1.0);
+    declare_parameter<double>("robot.odom_factor", 1.0);
+    declare_parameter<double>("robot.vx_factor", 0.95);
+    declare_parameter<double>("robot.yaw_offset", 0.1);
 
 }
 
@@ -27,20 +21,19 @@ void G1Brain::init() {
     loadConfig();
     
     data = std::make_shared<BrainData>();
-    // locator = std::make_shared<Locator>();
+    locator = std::make_shared<Locator>();
 
-    // tree = std::make_shared<BrainTree>(this);
+    tree = std::make_shared<BrainTree>(this);
     client = std::make_shared<RobotClient>(this);
 
     // 初始化粒子滤波定位器
-    locator.init1(config->fieldDimensions, 3, 0.4, 0.5);
+    locator->init(config->fieldDimensions, 3, 0.4, 0.5);
 
     // 构建 BehaviorTree
-    tree = std::make_shared<BrainTree>(this); // ← 创建 BrainTree
-    tree->init(); // ← 初始化行为树
+    tree->init();
 
     // 初始化 client
-    client->init2();
+    client->init();
     
     // 创建订阅者
     motorStatesSubscription = this->create_subscription<robot_interfaces::msg::MotorStates>(
@@ -67,21 +60,20 @@ void G1Brain::init() {
 
 void G1Brain::tick() {
 
-//    //更新行为树状态
-//     tree->setRobotPose(data->robotPoseToField);
-//     tree->setBall(data->ball);
-//     tree->setBallDetected(data->ballDetected);
-//     tree->setMarkings(data->markings);
-//     tree->setOpponents(data->opponents);
-//     tree->setGoalposts(data->goalposts);
+    // 更新行为树状态
+    tree->setRobotPose(data->robotPoseToField);
+    tree->setBall(data->ball);
+    tree->setBallDetected(data->ballDetected);
+    tree->setMarkings(data->markings);
+    tree->setOpponents(data->opponents);
+    tree->setGoalposts(data->goalposts);
     
-    //执行行为树
+    // 执行行为树
     tree->tick();
     
-    //发送控制命令
-    // client->setVelocity(tree->getVelocityX(), tree->getVelocityY(), tree->getVelocityOmega());
-    // client->moveHead(tree->getHeadYaw(), tree->getHeadPitch());
-
+    // 发送控制命令
+    client->setVelocity(tree->getVelocityX(), tree->getVelocityY(), tree->getVelocityOmega());
+    client->moveHead(tree->getHeadYaw(), tree->getHeadPitch());
     
     // 更新记忆
     updateMemory();
@@ -115,52 +107,31 @@ void G1Brain::updateMemory() {
 }
 
 void G1Brain::updateBallMemory() {
-    double wrist_yaw_angle = low_state.motor_state[JointIndex::kWaistYaw].states[0].q;
-    double servo0_angle = deg2rad(motor_states.states[0].q);
-    double servo1_angle = -deg2rad(motor_states.states[1].q);
-
-    // 用 posToRobot 构造 Vec3
-    Vec3<double> ball_pos_in_cam(
-        data->ball.posToRobot.x,
-        data->ball.posToRobot.y,
-        data->ball.posToRobot.z
+    Vec3<double> ball_global_pos = data->computeBallPosition(
+    rotMatPelvisToGlobal,
+    waist_yaw_q,
+    servo0_q,
+    servo1_q,
+    ball_position_in_cam
     );
-
-    // 假设 compute_ball_position 返回 Vec3<double>
-    Vec3<double> ball_global = data->computeBallPosition(
-        data->rotMatPelvisToGlobal,
-        wrist_yaw_angle,
-        servo0_angle,
-        servo1_angle,
-        ball_pos_in_cam
-    );
-    HomoMat<double> homoMatBallToWorldAligned =  data->homoMatPelvisToWorldAligned * data->homoMatTorsoToPelvis * data->homoMatHeadServoToTorso  *  data->homoMatXl330ToHeadServo * data->homoMatD455ToXl330 * data->homoMatCamToD455 * data->homoMatBallToCam;
-    double yaw_to_pelvis =  atan2(homoMatBallToWorldAligned(1,3),homoMatBallToWorldAligned(0,3));
-    double x = homoMatBallToWorldAligned(0,3);
-    double y = homoMatBallToWorldAligned(1,3);
-    double z = homoMatBallToWorldAligned(2,3);
-    // 计算长度和高度
-    double length = std::sqrt(ball_global[0] * ball_global[0] + ball_global[1] * ball_global[1]);
-
-    if ((length < 0.15) || (z >= -0.25)) // todo add score 
+    if((length < 0.15) || (z >= -0.25)) // todo add score 
     {
         std::cout << "高度" << z << "/"
-                  << "，长度" << length << std::endl;
+            << "，长度" << length << std::endl;
     }
     else
     {
-        // 这里假设 homoMatBallToWorldAligned 已经被正确赋值
-        data->ballYawToPelvis = atan2(homoMatBallToWorldAligned(1,3), homoMatBallToWorldAligned(0,3));
-        data->ballPositionInPelvis << homoMatBallToWorldAligned(0,3), homoMatBallToWorldAligned(1,3);
-        data->ballPositionInField = dehomoVec(data->homoMatPelvisToField * homoVec(data->ballPositionInPelvis));
+        ballYawToPelvis = atan2(homoMatBallToWorldAligned(1,3),homoMatBallToWorldAligned(0,3));
+        ballPositionInPelvis << homoMatBallToWorldAligned(0,3), homoMatBallToWorldAligned(1,3);
+        ballPositionInField = dehomoVec(homoMatPelvisToField * homoVec(ballPositionInPelvis));
 
         double x_T = homoMatBallToWorldAligned(0,3);
         double y_T = homoMatBallToWorldAligned(1,3);
         double z_T = homoMatBallToWorldAligned(2,3);
-        data->ball_range_selected = std::sqrt(x_T * x_T + y_T * y_T);
+        ball_range_selected = std::sqrt(x_T * x_T + y_T * y_T);
+
     } 
 }
-
 
 void G1Brain::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     last_odom_ = *msg;
@@ -186,11 +157,10 @@ void G1Brain::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 
 void G1Brain::lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr msg) {
     last_lowstate_ = *msg;
-    double wrist_yaw_angle = rad2deg(last_lowstate_.motor_state[JointIndex::kWaistYaw].states[0].q);
-    double servo_yaw_angle = last_lowstate_.motor_state[JointIndex::kLeftHipYaw].states[0].q;
-    double servo_pitch_angle = last_lowstate_.motor_state[JointIndex::kLeftHipPitch].states[0].q + servo_pitch_compensation_;
-    // 不要再写 Pose p_eye2base(...)，而是直接赋值
-    p_eye2base = Pose(0, -servo_height_, 0,
+    double wrist_yaw_angle = rad2deg(last_lowstate_.motor_state[JointIndex::kWaistYaw].q);
+    double servo_yaw_angle = last_lowstate_.motor_state[JointIndex::kLeftHipYaw].q;
+    double servo_pitch_angle = last_lowstate_.motor_state[JointIndex::kLeftHipPitch].q + servo_pitch_compensation_;
+    Pose p_eye2base(0, -servo_height_, 0,
                     deg2rad(servo_pitch_angle),
                     -deg2rad(wrist_yaw_angle) - deg2rad(servo_yaw_angle),
                     0);
@@ -205,8 +175,8 @@ void G1Brain::lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr 
 
 void G1Brain::motorStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg) {
     if (!msg->states.empty()) {
-        client->currentHeadYaw_ = msg->states[0].q;
-        client->currentHeadPitch_ = 0.0;
+        currentHeadYaw_ = msg->states[0].q;
+        currentHeadPitch_ = 0.0;
     }// 处理舵机状态回调
     RCLCPP_DEBUG(this->get_logger(), "Received motor states");
 }
@@ -214,10 +184,11 @@ void G1Brain::motorStatesCallback(const robot_interfaces::msg::MotorStates::Shar
 
 void G1Brain::mainLoop() {
     // 4. 计算并发布定位结果
-    if (selflocate && selflocate->isOdomCalibrated()) {
+    if (locator->odomCalibrated) {
+        calibrateOdom
         transCoord(
             data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
-            data->odomToField.x, data->odomToField.y, data->odomToField.theta,
+            locator->odomToField.x, locator->odomToField.y, locator->odomToField.theta,
             data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
 
         RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
@@ -236,7 +207,8 @@ void G1Brain::mainLoop() {
 
 void G1Brain::detectionsCallback(const robot_interfaces::msg::DetectionResults::SharedPtr msg) {
     // 1. 解析检测结果
-    auto gameObjects = getGameObjects(msg->results, p_eye2base, data->robotPoseToField);
+    auto gameObjects = getGameObjects(*msg);
+
     // 2. 分类处理
     std::vector<GameObject> balls, goalPosts, persons, robots, markings;
     for (const auto& obj : gameObjects) {
@@ -266,17 +238,17 @@ void G1Brain::detectionsCallback(const robot_interfaces::msg::DetectionResults::
     last_detections_ = msg->results;
 
     RCLCPP_DEBUG(this->get_logger(), "Processed detections: %zu balls, %zu markings, %zu robots, %zu goalposts",
-                balls.size(), markings.size(), robots.size(), goalPosts.size());
+                 balls.size(), markings.size(), robots.size(), goalPosts.size());
 }
 
 
 std::vector<GameObject> G1Brain::getGameObjects(
     const std::vector<robot_interfaces::msg::DetectionResult>& detection_results,
     const Pose& p_eye2base,
-    const Pose2D& robotPoseToField)
+    const Pose& robotPoseToField)
 {
     std::vector<GameObject> gameObjects;
-    for (const auto &result : detection_results) {
+    for (const auto& result : detection_results) {
         GameObject gObj;
 
         gObj.label = result.class_name;
@@ -285,10 +257,10 @@ std::vector<GameObject> G1Brain::getGameObjects(
         gObj.boundingBox.ymin = result.box[1];
         gObj.boundingBox.xmax = result.box[2];
         gObj.boundingBox.ymax = result.box[3];
-        gObj.confidence = result.score * 100;
+        gObj.confidence = result.score * 100; // 与第一个函数一致
 
         // Get object pose in camera coord
-        Pose pose = Pose(result.xyz[0], result.xyz[1], result.xyz[2], 0, 0, 0);
+        Pose pose(result.xyz[0], result.xyz[1], result.xyz[2], 0, 0, 0);
 
         // Get object pose in robot coord
         Pose obj_pose = p_eye2base * pose;
@@ -296,10 +268,11 @@ std::vector<GameObject> G1Brain::getGameObjects(
 
         gObj.posToRobot.x = obj_trans[2];
         gObj.posToRobot.y = -obj_trans[0];
+        gObj.posToRobot.z = obj_trans[1]; // 可选，按需保留
 
         gObj.range = std::hypot(gObj.posToRobot.x, gObj.posToRobot.y);
         gObj.yawToRobot = atan2(gObj.posToRobot.y, gObj.posToRobot.x);
-        gObj.pitchToRobot = atan2(1.3, gObj.range);
+        gObj.pitchToRobot = atan2(1.3, gObj.range); // 1.3为摄像头高度，可参数化
 
         // Get object pose in field coord
         transCoord(
@@ -307,10 +280,15 @@ std::vector<GameObject> G1Brain::getGameObjects(
             robotPoseToField.x, robotPoseToField.y, robotPoseToField.theta,
             gObj.posToField.x, gObj.posToField.y, gObj.posToField.z);
 
+        // 可选：记录时间戳
+        gObj.timePoint = this->now();
+
         gameObjects.push_back(gObj);
     }
-
+    return gameObjects;
 }
+
+
 void G1Brain::detectProcessBalls(const std::vector<GameObject>& ballObjs) {
     if (!ballObjs.empty()) {
         // 选择置信度最高的球
@@ -319,14 +297,14 @@ void G1Brain::detectProcessBalls(const std::vector<GameObject>& ballObjs) {
                 return a.confidence < b.confidence;
             });
         
-        data->ball = GameObject(*bestBall);
+        data->ball = Ball(*bestBall);
         data->ballDetected = true;
         
         // 计算球相对于机器人的角度
         data->robotBallAngleToField = atan2(data->ball.posToRobot.y, data->ball.posToRobot.x);
         
         RCLCPP_DEBUG(this->get_logger(), "Ball detected: confidence=%.2f, range=%.2f", 
-                    data->ball.confidence, data->ball.range);
+                     data->ball.confidence, data->ball.range);
     } else {
         data->ballDetected = false;
     }
@@ -349,12 +327,12 @@ void G1Brain::calibrateOdom(double x, double y, double theta)
 {
     // Calculate odomToField according to robotToOdom(by odometry) and robotToField(by locator)
     double x_or, y_or, theta_or; // or = odom to robot
-    x_or = -cos(data->robotPoseToOdom.theta) * data->robotPoseToOdom.x - sin(data->robotPoseToOdom.theta) * data->robotPoseToOdom.y;
-    y_or = sin(data->robotPoseToOdom.theta) * data->robotPoseToOdom.x - cos(data->robotPoseToOdom.theta) * data->robotPoseToOdom.y;
-    theta_or = -data->robotPoseToOdom.theta;
+    x_or = -cos(robotPoseToOdom.theta) * robotPoseToOdom.x - sin(robotPoseToOdom.theta) * robotPoseToOdom.y;
+    y_or = sin(robotPoseToOdom.theta) * robotPoseToOdom.x - cos(robotPoseToOdom.theta) * robotPoseToOdom.y;
+    theta_or = -robotPoseToOdom.theta;
 
     transCoord(x_or, y_or, theta_or,
                 x, y, theta,
-                data->odomToField.x, data->odomToField.y, data->odomToField.theta);
+                odomToField.x, odomToField.y, odomToField.theta);
 
 }

@@ -139,5 +139,3 @@ enum JointIndex {
     kNotUsedJoint6 = 33,
     kNotUsedJoint7 = 34
 };
-
-

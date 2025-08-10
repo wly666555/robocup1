@@ -1,11 +1,9 @@
 #pragma once
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
+
 #include <cmath>
 #include <vector>
 #include "types.h"
 #include <iostream>
-#include "locate/math_types.h"
 
 using namespace std;
 
@@ -171,44 +169,4 @@ inline HomoMat2<double> homoMatrix(RotMat2<double> m, Vec2<double> p)//
     homoM.topRightCorner(2, 1) = p;
     homoM(2, 2) = 1;
     return homoM;
-}
-
-inline HomoMat<double> homoMatrix(Vec3<double> p, RotMat<double> m)
-{
-    HomoMat<double> homoM;
-    homoM.setZero();
-    homoM.topLeftCorner(3, 3) = m;
-    homoM.topRightCorner(3, 1) = p;
-    homoM(3, 3) = 1;
-    return homoM;
-}
-
-
-template <typename T>
-inline T saturation(const T a, Vec2<T> limits)
-{
-    T lowLim, highLim;
-    if (limits(0) > limits(1))
-    {
-        lowLim = limits(1);
-        highLim = limits(0);
-    }
-    else
-    {
-        lowLim = limits(0);
-        highLim = limits(1);
-    }
-
-    if (a < lowLim)
-    {
-        return lowLim;
-    }
-    else if (a > highLim)
-    {
-        return highLim;
-    }
-    else
-    {
-        return a;
-    }
 }

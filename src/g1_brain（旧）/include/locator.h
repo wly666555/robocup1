@@ -47,8 +47,6 @@ struct LocateResult
 class Locator
 {
 public:
-    std::vector<GameObject> markings;
-	std::vector<FieldMarker> getMarkers();
 	// Parameters
 	double convergeTolerance = 0.2; // When the x, y, and theta ranges of all hypos are less than this value, it is considered that convergence has been achieved.
 	double residualTolerance = 0.4; // If the average residual for each marker is greater than this value, the converged position is considered unreasonable.
@@ -67,7 +65,7 @@ public:
 	Pose2D bestPose;					  // The best hypothesized position for each positioning.
 	double bestResidual;				  // The minimum residual for each positioning.
 
-	void init1(FieldDimensions fd, int minMarkerCnt = 4, double residualTolerance = 0.4, double muOffsetParam = 2.0);
+	void init(FieldDimensions fd, int minMarkerCnt = 4, double residualTolerance = 0.4, double muOffsetParam = 2.0);
 
 	/**
 	 * @brief Generate the positions in the pitch coordinate system of all the landmark points on the pitch based on the pitch dimension information.

@@ -5,18 +5,14 @@
 #include <vector>
 #include "locator.h"
 #include "robot_interfaces/msg/imu_state.hpp"
-#include <Eigen/Dense>
-#include "locate/math_types.h"
 
 class BrainData
 {
 public:
-    Locator locator;
     // Robot position & velocity commands
     Pose2D robotPoseToOdom;
     Pose2D odomToField;
     Pose2D robotPoseToField;
-    
 
     double headPitch;
     double headYaw;
@@ -36,16 +32,6 @@ public:
     double ball_range_selected;
     double robotBallAngleToField;
     HomoMat2<double> homoMatPelvisToField;
-    HomoMat<double> homoMatPelvisToWorldAligned;
-    HomoMat<double> homoMatTorsoToPelvis;
-    HomoMat<double> homoMatHeadServoToTorso;
-    RotMat<double> rotMatXl330ToHeadServo;
-    HomoMat<double> homoMatXl330ToHeadServo;
-    HomoMat<double> homoMatD455ToXl330;
-    RotMat<double> rotMatCamToD455;
-    HomoMat<double> homoMatCamToD455;
-    HomoMat<double> homoMatBallToCam;
-    
 
     Vec3<double> computeBallPosition(const RotMat<double>& rotMatPelvisToGlobal,
                                      double waist_yaw_q,

@@ -26,7 +26,7 @@ public:
     string fieldType; // 球场尺寸
     string location_mode;
     string playerStartPos;
-    std::string treeFilePath;
+    
     FieldDimensions fieldDimensions; // 球场尺寸
     // 机器人相关参数
     double pitch_compensation;
@@ -38,4 +38,4 @@ public:
     double memoryLength;  // 球位置记忆时间（秒）
     
     void handle() ;
-};
+}

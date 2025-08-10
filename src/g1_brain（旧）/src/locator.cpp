@@ -1,12 +1,12 @@
 #include "locator.h"
-#include "locate/math_utils.h"
+#include "math_utils.h"
 
-#include "locate/misc.h"
-#include "locate/types.h"
+#include "misc.h"
+#include "types.h"
 #include <iostream>
 #include <vector>
 
-void Locator::init1(FieldDimensions fd, int minMarkerCntParam, double residualToleranceParam, double muOffestParam)
+void Locator::init(FieldDimensions fd, int minMarkerCntParam, double residualToleranceParam, double muOffestParam)
 {
     fieldDimensions = fd;
     calcFieldMarkers(fd);

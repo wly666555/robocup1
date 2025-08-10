@@ -52,16 +52,15 @@ Vec3<double> BrainData::computeBallPosition(
     RotMat<double> rotMatPelvisToGlobal_no_yaw = rpyToRotMat(_B2G_rpy(0), _B2G_rpy(1), 0);
 
     // 构建完整的坐标变换链
-    homoMatPelvisToWorldAligned = homoMatrix(Vec3<double>(0.0, 0.0, 0.0), rotMatPelvisToGlobal_no_yaw);
-    homoMatTorsoToPelvis = homoMatrix(Vec3<double>(-0.0039635, 0.0, 0.044), rotz(waist_yaw_q));
-    homoMatHeadServoToTorso = homoMatrix(Vec3<double>(0.0039635, 0.0, -0.047), RotMat<double>::Identity());
-    rotMatXl330ToHeadServo = roty(0.039968) * rotz(servo0_q);
-    homoMatXl330ToHeadServo = homoMatrix(Vec3<double>(0.030518, 0.0, 0.52486), rotMatXl330ToHeadServo);
-    homoMatD455ToXl330 = homoMatrix(Vec3<double>(0.0295, 0.0, 0.013), roty(servo1_q));
-    rotMatCamToD455 = roty(0.6981) * roty(1.5707) * rotz(-1.5707);
-    homoMatCamToD455 = homoMatrix(Vec3<double>(0.04061, 0.01000, -0.02207), rotMatCamToD455);
-    homoMatBallToCam = homoMatrix(ball_position_in_cam, RotMat<double>::Identity());
-    
+    HomoMat<double> homoMatPelvisToWorldAligned = homoMatrix(Vec3<double>(0.0, 0.0, 0.0), rotMatPelvisToGlobal_no_yaw);
+    HomoMat<double> homoMatTorsoToPelvis = homoMatrix(Vec3<double>(-0.0039635, 0.0, 0.044), rotz(waist_yaw_q));
+    HomoMat<double> homoMatHeadServoToTorso = homoMatrix(Vec3<double>(0.0039635, 0.0, -0.047), RotMat<double>::Identity());
+    RotMat<double> rotMatXl330ToHeadServo = roty(0.039968) * rotz(servo0_q);
+    HomoMat<double> homoMatXl330ToHeadServo = homoMatrix(Vec3<double>(0.030518, 0.0, 0.52486), rotMatXl330ToHeadServo);
+    HomoMat<double> homoMatD455ToXl330 = homoMatrix(Vec3<double>(0.0295, 0.0, 0.013), roty(servo1_q));
+    RotMat<double> rotMatCamToD455 = roty(0.6981) * roty(1.5707) * rotz(-1.5707);
+    HomoMat<double> homoMatCamToD455 = homoMatrix(Vec3<double>(0.04061, 0.01000, -0.02207), rotMatCamToD455);
+    HomoMat<double> homoMatBallToCam = homoMatrix(ball_position_in_cam, RotMat<double>::Identity());
 
     // 组合所有变换
     HomoMat<double> homoMatBallToWorld =

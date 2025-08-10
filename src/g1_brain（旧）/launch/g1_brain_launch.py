@@ -24,7 +24,7 @@ def generate_launch_description():
     # 创建g1_brain节点
     g1_brain_node = Node(
         package='g1_brain',
-        executable='g1_brain',
+        executable='g1_brain_node',
         name='g1_brain_node',
         output='screen',
         parameters=[config_file],
@@ -37,5 +37,5 @@ def generate_launch_description():
     
     return LaunchDescription([
         declare_config_file_cmd,
-        g1_brain_node,   # 必须加上这一行
-    ])
+        g1_brain_node
+    ]) 

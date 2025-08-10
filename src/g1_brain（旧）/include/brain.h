@@ -10,25 +10,21 @@
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
-#include "robot_interfaces/msg/low_state.hpp"
 #include <tf2/LinearMath/Quaternion.h>
-#include "nav_msgs/msg/odometry.hpp"
-#include "locate/types.h"
+#include "types.h"
 #include "locator.h"
 #include "locate/pose.h"
 #include "locate/yaml_parser.h"
 // 添加roboCup_sdk依赖
+#include <unitree/robot/g1/loco/g1_loco_client.hpp>
 #include "brain_config.h"
-#include "client.hpp"
+#include "brain_tree.h"
 #include <cmath>
 #include <sstream>
 #include "locate/math_utils.h"
-#include "brain_data.h"
 
-class BrainTree;
 using namespace std::placeholders;
-
-class SelfLocate;
+using namespace unitree::robot::g1;
 
 
 
@@ -43,32 +39,20 @@ class SelfLocate;
  */
 class G1Brain : public rclcpp::Node {
 public:
-    void publishMotorCmds() {
-        motor_cmd_pub_->publish(motor_cmds);
-    }
-    std::shared_ptr<BrainData> getData() const { return data; }
-    const robot_interfaces::msg::MotorStates& getMotorStates() const { return motor_states; }
-    robot_interfaces::msg::MotorCmds& getMotorCmds() { return motor_cmds; }
-    Locator locator;
     G1Brain();
     ~G1Brain() = default;
-    Pose p_eye2base;
-    FieldDimensions fd;
+    
     void init();
     void tick();
-    std::shared_ptr<BrainConfig> getConfig() const { return config; }
-    void calibrateOdom(double x, double y, double theta);
     
 private:
     // 配置和数据
     std::shared_ptr<BrainConfig> config;
     std::shared_ptr<BrainData> data;
-    // std::shared_ptr<Locator> locator;
-    std::shared_ptr<BrainTree> tree;
-    std::shared_ptr<SelfLocate> selflocate;
+    std::shared_ptr<Locator> locator;
+    std::shared_ptr<BehaviorTree> tree;
     std::shared_ptr<RobotClient> client;
-    
-    // std::shared_ptr<BrainLog> log;
+    std::shared_ptr<BrainLog> log;
     
     // 成员变量
     double odometry_factor_{1.0};
@@ -92,19 +76,12 @@ private:
     
     // 检测处理
     nav_msgs::msg::Odometry last_odom_;
-    robot_interfaces::msg::LowState low_state;
-    robot_interfaces::msg::MotorStates motor_states;
-    robot_interfaces::msg::MotorState motor_state;
     robot_interfaces::msg::LowState last_lowstate_;
-    robot_interfaces::msg::MotorCmds motor_cmds;
     std::vector<robot_interfaces::msg::DetectionResult> last_detections_;
-    std::vector<GameObject> getGameObjects(
-        const std::vector<robot_interfaces::msg::DetectionResult_<std::allocator<void>>>& detections,
-        const Pose& robot_pose,
-        const Pose2D& map_pose);
+    std::vector<GameObject> getGameObjects(const robot_interfaces::msg::DetectionResults& detections);
     void detectProcessBalls(const std::vector<GameObject>& ballObjs);
     void detectProcessMarkings(const std::vector<GameObject>& markingObjs);
-
+    void calibrateOdom(double x, double y, double theta);
     
     // 订阅者
     rclcpp::Subscription<robot_interfaces::msg::MotorStates>::SharedPtr motorStatesSubscription;

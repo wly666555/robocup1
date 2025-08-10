@@ -1,4 +1,4 @@
-#include "locate/pose.h"
+#include "pose.h"
 
 Pose::Pose(const float &x, const float &y, const float &z,
            const float &roll, const float &pitch, const float &yaw) {

@@ -4,7 +4,6 @@
 
 void BrainConfig::handle()
 {
-    treeFilePath = "/home/unitree/wly666/g1_brain/behavior_trees/Sub_CamFindAndTrackBall.xml";
     // playerStartPos[left, right]
     if (playerStartPos != "left" && playerStartPos != "right")
     {

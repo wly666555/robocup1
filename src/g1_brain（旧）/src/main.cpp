@@ -21,7 +21,7 @@
  * - 舵机状态：rt/g1_comp_servo/state (RobotClient)
  * - 舵机状态：servo/motor_states (G1Brain)
  */
-#include "brain.h"
+#include "g1_brain/brain.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <memory>
 
