@@ -77,6 +77,7 @@ void BrainTree::initEntry()
 {
     // setEntry<std::string>("player_role", brain->config->playerRole);
     setEntry<bool>("ball_location_known", false);
+    
     setEntry<bool>("track_ball", true);
     setEntry<bool>("odom_calibrated", false);
     setEntry<std::string>("decision", "");

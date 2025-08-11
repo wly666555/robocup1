@@ -65,22 +65,9 @@ void G1Brain::init() {
 }
 
 void G1Brain::tick() {
-
-//    //更新行为树状态
-//     tree->setRobotPose(data->robotPoseToField);
-//     tree->setBall(data->ball);
-//     tree->setBallDetected(data->ballDetected);
-//     tree->setMarkings(data->markings);
-//     tree->setOpponents(data->opponents);
-//     tree->setGoalposts(data->goalposts);
     
     //执行行为树
     tree->tick();
-    
-    //发送控制命令
-    // client->setVelocity(tree->getVelocityX(), tree->getVelocityY(), tree->getVelocityOmega());
-    // client->moveHead(tree->getHeadYaw(), tree->getHeadPitch());
-
     
     // 更新记忆
     updateMemory();
