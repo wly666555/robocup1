@@ -116,6 +116,7 @@ void G1Brain::updateBallMemory() {
         servo1_angle,
         ball_pos_in_cam
     );
+    homoMatPelvisToField = homoMatrix(rotMat2D(locateResult->msg_.robot2field_theta()),Vec2<double>(locateResult->msg_.robot2field_x(),locateResult->msg_.robot2field_y()));
     HomoMat<double> homoMatBallToWorldAligned =  data->homoMatPelvisToWorldAligned * data->homoMatTorsoToPelvis * data->homoMatHeadServoToTorso  *  data->homoMatXl330ToHeadServo * data->homoMatD455ToXl330 * data->homoMatCamToD455 * data->homoMatBallToCam;
     double yaw_to_pelvis =  atan2(homoMatBallToWorldAligned(1,3),homoMatBallToWorldAligned(0,3));
     double x = homoMatBallToWorldAligned(0,3);
@@ -135,7 +136,7 @@ void G1Brain::updateBallMemory() {
         data->ballYawToPelvis = atan2(homoMatBallToWorldAligned(1,3), homoMatBallToWorldAligned(0,3));
         data->ballPositionInPelvis << homoMatBallToWorldAligned(0,3), homoMatBallToWorldAligned(1,3);
         data->ballPositionInField = dehomoVec(data->homoMatPelvisToField * homoVec(data->ballPositionInPelvis));
-
+        data->ballRange = sqrt(pow(brain->data->ballPositionInPelvis(0), 2) + pow(brain->data->ballPositionInPelvis(1), 2));
         double x_T = homoMatBallToWorldAligned(0,3);
         double y_T = homoMatBallToWorldAligned(1,3);
         double z_T = homoMatBallToWorldAligned(2,3);
@@ -161,8 +162,7 @@ void G1Brain::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
         "Odometer information: (%.3f, %.3f, %.3f)",
         data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta);
-
-    
+  
 }
 
 
@@ -204,7 +204,7 @@ void G1Brain::mainLoop() {
 
     RCLCPP_INFO(this->get_logger(), "odomCalibrated: %d", data->odomCalibrated);
 
-    if (calibrated) {
+    if (data->odomCalibrated) {
         transCoord(
             data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
             data->odomToField.x, data->odomToField.y, data->odomToField.theta,
@@ -321,6 +321,7 @@ void G1Brain::detectProcessBalls(const std::vector<GameObject>& ballObjs) {
     } else {
         data->ballDetected = false;
     }
+    data->angle_robot_ball_field = atan2(data->ballPositionInField(1) - data->robotPoseToField.y , data->ballPositionInField(0) - data->robotPoseToField.x);
 }
 
 void G1Brain::detectProcessMarkings(const std::vector<GameObject>& markingObjs) {

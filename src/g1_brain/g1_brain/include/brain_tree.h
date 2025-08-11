@@ -34,7 +34,6 @@ using namespace BT;
 class BrainTree {
 public:
     BrainTree(G1Brain *argBrain) : brain(argBrain) {}
-
     void init();
     void tick();
 

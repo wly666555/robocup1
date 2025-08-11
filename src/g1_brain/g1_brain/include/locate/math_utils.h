@@ -212,3 +212,11 @@ inline T saturation(const T a, Vec2<T> limits)
         return a;
     }
 }
+
+inline RotMat2<double> rotMat2D(double theta)
+{
+    RotMat2<double> R;
+    R << std::cos(theta), -std::sin(theta),
+         std::sin(theta),  std::cos(theta);
+    return R;
+}

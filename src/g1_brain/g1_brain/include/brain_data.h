@@ -15,7 +15,7 @@ public:
     // Robot position & velocity commands
     Pose2D robotPoseToOdom;
     Pose2D odomToField;
-    Pose2D robotPoseToField;
+    Pose2D robotPoseToField;  //机器人场地位置
     
     bool odomCalibrated = false;
 
@@ -29,14 +29,15 @@ public:
     std::vector<GameObject> opponents;
     std::vector<GameObject> goalposts;
     std::vector<GameObject> markings;
-
+    double angle_robot_ball_field;
     double ballYawToPelvis;
+    double ballRange;
     Vec2<double> ballPositionInPelvis;
-    Vec2<double> ballPositionInField;
+    Vec2<double> ballPositionInField;   //球在场地位置
     RotMat<double> rotMatPelvisToGlobal, rotMatGlobalToPelvis;
     double ball_range_selected;
     double robotBallAngleToField;
-    HomoMat2<double> homoMatPelvisToField;
+    HomoMat2<double> homoMatPelvisToField;//
     HomoMat<double> homoMatPelvisToWorldAligned;
     HomoMat<double> homoMatTorsoToPelvis;
     HomoMat<double> homoMatHeadServoToTorso;
