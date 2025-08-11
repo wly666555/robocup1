@@ -133,15 +133,16 @@ BT::NodeStatus SelfLocate::tick() {
 
     // Locate
     PoseBox2D constraints{xMin, xMax, yMin, yMax, thetaMin, thetaMax};
-    auto res = brain->locator.locateRobot(markers, constraints);
+    auto res = brain->locator->locateRobot(markers, constraints);
 
     std::cout << "locate result: res: " << std::to_string(res.code) << " time: " << std::to_string(res.msecs) << std::endl;
+    if (!res.success)
+        return NodeStatus::SUCCESS; // Do not block following nodes.
+    
+    brain->calibrateOdom(res.pose.x, res.pose.y, res.pose.theta);
 
-    if (res.success) {
-        brain->calibrateOdom(res.pose.x, res.pose.y, res.pose.theta);
-        data->odomCalibrated = true;
-        lastSuccessfulLocalizeTime = std::chrono::high_resolution_clock::now();
-    }
+    brain->tree->setEntry<bool>("odom_calibrated", true);
+    brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     
     std::cout << "locate success: " << std::to_string(res.pose.x) << " " << std::to_string(res.pose.y) << " " << std::to_string(rad2deg(res.pose.theta)) << " Dur: " << std::to_string(res.msecs) << std::endl;
 

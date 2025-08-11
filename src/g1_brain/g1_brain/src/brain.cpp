@@ -26,7 +26,7 @@ void G1Brain::init() {
     client = std::make_shared<RobotClient>(this);
 
     // 初始化粒子滤波定位器
-    locator.init(config->fieldDimensions, 3, 0.4, 0.5);
+    locator->init(config->fieldDimensions, 3, 0.4, 0.5);
 
     // 构建 BehaviorTree
     tree = std::make_shared<BrainTree>(this); // ← 创建 BrainTree
@@ -34,6 +34,9 @@ void G1Brain::init() {
 
     // 初始化 client
     client->init();
+
+
+    data->lastSuccessfulLocalizeTime = get_clock()->now();
     
     // 创建订阅者
     servoStatesSubscription = this->create_subscription<robot_interfaces::msg::MotorStates>(
@@ -84,6 +87,11 @@ void G1Brain::loadConfig() {
     config->handle();
 
     RCLCPP_INFO(this->get_logger(), "Configuration loaded");
+}
+
+double Brain::msecsSince(rclcpp::Time time)
+{
+    return (this->get_clock()->now() - time).nanoseconds() / 1e6;
 }
 
 void G1Brain::updateMemory() {
