@@ -10,61 +10,24 @@
 #include "brain.h"
 
 // 注册节点时的宏（你可以用 lambda注册，见头文件说明）
+#define REGISTER_BUILDER(Name)     \
+    factory.registerBuilder<Name>( \
+        #Name,                     \
+        [this](const string &name, const NodeConfig &config) { return make_unique<Name>(name, config, brain); });
+
 
 void BrainTree::init()
 {
     BehaviorTreeFactory factory;
-    // factory.registerBehaviorTreeFromFile(config_.treeFilePath);
-    data = std::make_shared<BrainData>();
     // Action Nodes
-    factory.registerBuilder<SelfLocate>(
-        "SelfLocate",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<SelfLocate>(name, config, this->brain, *(this->brain->config), this->data);
-        }
-    );
-    factory.registerBuilder<Adjust>(
-        "Adjust",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<Adjust>(name, config, this->brain, *(this->brain->config));
-        }
-    );
-    factory.registerBuilder<Kick>(
-        "Kick",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<Kick>(name, config, this->brain, *(this->brain->config));
-        }
-    );
-    factory.registerBuilder<CamTrackBall>(
-        "CamTrackBall",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<CamTrackBall>(name, config, this->brain, *(this->brain->config));
-        }
-    );
-    factory.registerBuilder<CamFindBall>(
-        "CamFindBall",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<CamFindBall>(name, config, this->brain, *(this->brain->config));
-        }
-    );
-    factory.registerBuilder<robotTrackField>(
-        "robotTrackField",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<robotTrackField>(name, config, this->brain, *(this->brain->config));
-        }
-    );
-    factory.registerBuilder<PrintMsg>(
-        "PrintMsg",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<PrintMsg>(name, config, this->brain, *(this->brain->config));
-        }
-    );
-    factory.registerBuilder<playerDecision>(
-        "playerDecision",
-        [this](const std::string& name, const BT::NodeConfiguration& config) {
-            return std::make_unique<playerDecision>(name, config, this->brain, *(this->brain->config));
-        }
-    );
+    REGISTER_BUILDER(Chase)
+    REGISTER_BUILDER(Adjust)
+    REGISTER_BUILDER(Kick)
+    REGISTER_BUILDER(playerDecision)
+    REGISTER_BUILDER(CamTrackBall)
+    REGISTER_BUILDER(CamFindBall)
+    REGISTER_BUILDER(SelfLocate)
+    
 
     factory.registerBehaviorTreeFromFile(this->brain->config->treeFilePath);
     tree = factory.createTree("CamFindAndTrackBall");
@@ -105,7 +68,7 @@ BT::NodeStatus SelfLocate::tick() {
         return BT::NodeStatus::FAILURE;
     }
     
-    auto markers = data->locator.getMarkers();
+    auto markers = brain->data->getMarkers();
     std::cout << "[DEBUG] markers.size(): " << markers.size() << std::endl;
     for (const auto& m : markers) {
         std::cout << "[DEBUG] marker: type=" << m.type << " x=" << m.x << " y=" << m.y << " conf=" << m.confidence << std::endl;
@@ -217,7 +180,7 @@ BT::NodeStatus Adjust::tick()
     double angle_goal_ball_field = atan2(vec_goal_ball_field(1),vec_goal_ball_field(0));
 
 
-    double deltaDir = toPInPI(angle_goal_ball_field - data->angle_robot_ball_field);
+    double deltaDir = toPInPI(angle_goal_ball_field - data->robotBallAngleToField);
 
     double dir = deltaDir > 0 ? -1.0 : 1.0;
 
@@ -262,7 +225,7 @@ BT::NodeStatus CamTrackBall::tick()
 }
 
 
-BT::NodeStatus robotTrackField::tick()
+BT::NodeStatus Chase::tick()
 {
     if(!brain->tree->get_Entry<bool>("ball_location_known"))
     {
@@ -289,7 +252,7 @@ BT::NodeStatus robotTrackField::tick()
     double angle_goal_ball_field = atan2(vec_goal_ball_field(1),vec_goal_ball_field(0));
 
 
-    double deltaDir = angle_goal_ball_field - data->angle_robot_ball_field;
+    double deltaDir = angle_goal_ball_field - data->robotBallAngleToField;
 
     double dir = deltaDir > 0 ? -1.0 : 1.0;
 

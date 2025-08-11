@@ -128,7 +128,9 @@ struct GameObject
     double pitchToRobot, yawToRobot; // The pitch and yaw of the object relative to the front of the robot, in rad. Downward and leftward are positive.        // The time when the object was detected.
 };
 
-struct PoseBox2D
+
+// 定位范围约束条件
+struct PoseBox2D 
 {
 	double xmin;
 	double xmax;
@@ -138,6 +140,7 @@ struct PoseBox2D
 	double thetamax;
 };
 
+// 球场标志点
 struct FieldMarker
 {
 	char type;			// L|T|X|P, representing different types of landmark points, where P represents the penalty mark.

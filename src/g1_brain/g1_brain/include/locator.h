@@ -10,6 +10,7 @@
 #include <limits>
 #include <cmath>
 #include <chrono>
+
 #include "robot_interfaces/msg/motor_cmd.hpp"
 #include "robot_interfaces/msg/motor_states.hpp"
 #include "robot_interfaces/msg/detection_result.hpp"
@@ -17,10 +18,10 @@
 #include "robot_interfaces/msg/location_result.hpp"
 #include "locate/types.h"
 
-// #define EPSILON 1e-5
 
 using namespace std;
 namespace chr = std::chrono;
+
 
 
 // The positioning result.
@@ -35,7 +36,7 @@ struct LocateResult
 	// 5: The probabilities of all particles are too low
 	// -1 represents the initial state
 	int code = -1;
-	double residual = 0; // The average residual error.
+	double residual = 0; // 平均残差
 	Pose2D pose;
 	int msecs = 0; // The time consumed for positioning.
 };
@@ -47,8 +48,7 @@ struct LocateResult
 class Locator
 {
 public:
-    std::vector<GameObject> markings;
-	std::vector<FieldMarker> getMarkers();
+
 	// Parameters
 	double convergeTolerance = 0.2; // When the x, y, and theta ranges of all hypos are less than this value, it is considered that convergence has been achieved.
 	double residualTolerance = 0.4; // If the average residual for each marker is greater than this value, the converged position is considered unreasonable.
@@ -67,7 +67,7 @@ public:
 	Pose2D bestPose;					  // The best hypothesized position for each positioning.
 	double bestResidual;				  // The minimum residual for each positioning.
 
-	void init1(FieldDimensions fd, int minMarkerCnt = 4, double residualTolerance = 0.4, double muOffsetParam = 2.0);
+	void init(FieldDimensions fd, int minMarkerCnt = 4, double residualTolerance = 0.4, double muOffsetParam = 2.0);
 
 	/**
 	 * @brief Generate the positions in the pitch coordinate system of all the landmark points on the pitch based on the pitch dimension information.
@@ -203,9 +203,4 @@ public:
 		return 1 / sqrt(2 * M_PI * sigma * sigma) * exp(-(r - mu) * (r - mu) / (2 * sigma * sigma));
 	};
 
-	/**
-	 * @brief Log particles(hypos) to rerun
-	 *
-	 */
-	void logParticles();
 };

@@ -3,9 +3,11 @@
 #include <string>
 #include <mutex>
 #include <vector>
+#include <Eigen/Dense>
+
 #include "locator.h"
 #include "robot_interfaces/msg/imu_state.hpp"
-#include <Eigen/Dense>
+
 #include "locate/math_types.h"
 
 
@@ -24,25 +26,36 @@ public:
     
     bool odomCalibrated = false;
 
+    // 头部位置 通过 lowStateCallback 更新数据
     double headPitch;
     double headYaw;
+
+    //IMU 数据
     robot_interfaces::msg::IMUState cur_imu;
 
-    // Ball
+    // 足球
     bool ballDetected = false;
     GameObject ball;
+    double robotBallAngleToField;       // 机器人到球的向量, 在球场坐标系中与 X 轴的夹角, (-PI,PI]
+
+
+    Vec2<double> ballPositionInPelvis;
+    double ballYawToPelvis;
+    Vec2<double> ballPositionInField;   //球在场地位置
+    double ballRange;                   // 物体距离机器人中心在物体场平面上的投影点的直线距离
+
+
+    // 场上其它对象
     std::vector<GameObject> opponents;
     std::vector<GameObject> goalposts;
     std::vector<GameObject> markings;
-    double angle_robot_ball_field;
-    double ballYawToPelvis;
-    double ballRange;
-    Vec2<double> ballPositionInPelvis;
-    Vec2<double> ballPositionInField;   //球在场地位置
+
+
+
     RotMat<double> rotMatPelvisToGlobal, rotMatGlobalToPelvis;
     double ball_range_selected;
-    double robotBallAngleToField;
-    HomoMat2<double> homoMatPelvisToField;//
+
+    HomoMat2<double> homoMatPelvisToField; 
     HomoMat<double> homoMatPelvisToWorldAligned;
     HomoMat<double> homoMatTorsoToPelvis;
     HomoMat<double> homoMatHeadServoToTorso;
@@ -55,8 +68,10 @@ public:
     
 
     Vec3<double> computeBallPosition(const RotMat<double>& rotMatPelvisToGlobal,
-                                     double waist_yaw_q,
-                                     double servo0_q,
-                                     double servo1_q,
-                                     const Vec3<double>& ball_position_in_cam);
+                                    double waist_yaw_q,
+                                    double servo0_q,
+                                    double servo1_q,
+                                    const Vec2<double>& ball_position_in_cam);
+
+    vector<FieldMarker> getMarkers();   
 };

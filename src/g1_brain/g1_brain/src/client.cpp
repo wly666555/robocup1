@@ -1,13 +1,13 @@
-#include "client.hpp"
+
 #include <algorithm>
 
-RobotClient::RobotClient(rclcpp::Node* node)
-    : node_(node), currentHeadYaw_(0.0), currentHeadPitch_(0.0) {
-    RCLCPP_INFO(node_->get_logger(), "RobotClient created");
-}
 
-void RobotClient::init() {
+#include "brain.h"
+#include "robot_client.hpp"
 
+
+void RobotClient::init() 
+{
     req_puber_ = brain->create_publisher<unitree_api::msg::Request>("/api/sport/request", 10);
 }
 

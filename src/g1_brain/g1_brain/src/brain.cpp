@@ -1,9 +1,4 @@
 #include "brain.h"
-#include "brain_data.h"
-#include "brain_tree.h"
-#include "robot_interfaces/msg/detection_result.hpp"
-#include "robot_interfaces/msg/detection_results.hpp"
-#include "robot_interfaces/msg/location_result.hpp"
 
 
 G1Brain::G1Brain() : Node("g1_brain") {
@@ -31,7 +26,7 @@ void G1Brain::init() {
     client = std::make_shared<RobotClient>(this);
 
     // 初始化粒子滤波定位器
-    locator.init1(config->fieldDimensions, 3, 0.4, 0.5);
+    locator.init(config->fieldDimensions, 3, 0.4, 0.5);
 
     // 构建 BehaviorTree
     tree = std::make_shared<BrainTree>(this); // ← 创建 BrainTree
@@ -41,9 +36,8 @@ void G1Brain::init() {
     client->init();
     
     // 创建订阅者
-    motorStatesSubscription = this->create_subscription<robot_interfaces::msg::MotorStates>(
-        "servo/motor_states", 10, 
-        std::bind(&G1Brain::motorStatesCallback, this, std::placeholders::_1));
+    servoStatesSubscription = this->create_subscription<robot_interfaces::msg::MotorStates>(
+        "servo/motor_states", 10, std::bind(&G1Brain::servoStatesCallback, this, std::placeholders::_1));
     detectionsSubscription = this->create_subscription<robot_interfaces::msg::DetectionResults>(
         "detection_results", 10, 
         std::bind(&G1Brain::detectionsCallback, this, std::placeholders::_1));
@@ -55,8 +49,8 @@ void G1Brain::init() {
     motor_cmd_pub_ = this->create_publisher<robot_interfaces::msg::MotorCmds>(
         "rt/g1_comp_servo/cmd", 10);
 
-    motor_states_sub_ = this->create_subscription<robot_interfaces::msg::MotorStates>(
-        "rt/g1_comp_servo/state", 10,std::bind(&G1Brain::motorStatesCallback, this, std::placeholders::_1));
+    servo_states_sub_ = this->create_subscription<robot_interfaces::msg::MotorStates>(
+        "rt/g1_comp_servo/state", 10,std::bind(&G1Brain::servoStatesCallback, this, std::placeholders::_1));
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(50),
         std::bind(&G1Brain::mainLoop, this));
@@ -97,21 +91,20 @@ void G1Brain::updateMemory() {
 }
 
 void G1Brain::updateBallMemory() {
-    double wrist_yaw_angle = low_state.motor_state[JointIndex::kWaistYaw].states[0].q;
+    double waist_yaw_angle = low_state.motor_state[JointIndex::kWaistYaw].states[0].q;
     double servo0_angle = deg2rad(motor_states.states[0].q);
     double servo1_angle = -deg2rad(motor_states.states[1].q);
 
-    // 用 posToRobot 构造 Vec3
-    Vec3<double> ball_pos_in_cam(
-        data->ball.posToRobot.x,
-        data->ball.posToRobot.y,
-        data->ball.posToRobot.z
+    // 用 posToRobot 构造 Vec2
+    Vec2<double> ball_pos_in_cam(
+        data->ballPositionInPelvis[0],
+        data->ballPositionInPelvis[1],
     );
 
     // 假设 compute_ball_position 返回 Vec3<double>
     Vec3<double> ball_global = data->computeBallPosition(
         data->rotMatPelvisToGlobal,
-        wrist_yaw_angle,
+        waist_yaw_angle,
         servo0_angle,
         servo1_angle,
         ball_pos_in_cam
@@ -168,24 +161,24 @@ void G1Brain::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 
 void G1Brain::lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr msg) {
     last_lowstate_ = *msg;
-    double wrist_yaw_angle = rad2deg(last_lowstate_.motor_state[JointIndex::kWaistYaw].states[0].q);
+    double waist_yaw_angle = rad2deg(last_lowstate_.motor_state[JointIndex::kWaistYaw].states[0].q);
     double servo_yaw_angle = last_lowstate_.motor_state[JointIndex::kLeftHipYaw].states[0].q;
     double servo_pitch_angle = last_lowstate_.motor_state[JointIndex::kLeftHipPitch].states[0].q + servo_pitch_compensation_;
     // 不要再写 Pose p_eye2base(...)，而是直接赋值
     p_eye2base = Pose(0, -servo_height_, 0,
                     deg2rad(servo_pitch_angle),
-                    -deg2rad(wrist_yaw_angle) - deg2rad(servo_yaw_angle),
+                    -deg2rad(waist_yaw_angle) - deg2rad(servo_yaw_angle),
                     0);
     data->cur_imu.quaternion [0]= last_lowstate_.imu_state.quaternion[0];
     data->cur_imu.quaternion [1]= last_lowstate_.imu_state.quaternion[1];
     data->cur_imu.quaternion [2]= last_lowstate_.imu_state.quaternion[2];
     data->cur_imu.quaternion [3]= last_lowstate_.imu_state.quaternion[3];
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-        "Servo information: wrist_yaw_angle(%.2f), servo_yaw_angle(%.2f), servo_pitch_angle(%.2f)",
-        wrist_yaw_angle, servo_yaw_angle, servo_pitch_angle);
+        "Servo information: waist_yaw_angle(%.2f), servo_yaw_angle(%.2f), servo_pitch_angle(%.2f)",
+        waist_yaw_angle, servo_yaw_angle, servo_pitch_angle);
 }
 
-void G1Brain::motorStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg) {
+void G1Brain::servoStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg) {
     if (!msg->states.empty()) {
         client->currentHeadYaw_ = msg->states[0].q;
         client->currentHeadPitch_ = 0.0;
@@ -321,7 +314,7 @@ void G1Brain::detectProcessBalls(const std::vector<GameObject>& ballObjs) {
     } else {
         data->ballDetected = false;
     }
-    data->angle_robot_ball_field = atan2(data->ballPositionInField(1) - data->robotPoseToField.y , data->ballPositionInField(0) - data->robotPoseToField.x);
+    data->robotBallAngleToField = atan2(data->ballPositionInField(1) - data->robotPoseToField.y , data->ballPositionInField(0) - data->robotPoseToField.x);
 }
 
 void G1Brain::detectProcessMarkings(const std::vector<GameObject>& markingObjs) {

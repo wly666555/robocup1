@@ -1,33 +1,23 @@
-#ifndef NODE_H
-#define NODE_H
+#pragma once
 
 #include <cmath>
 #include <algorithm>
-#include <string>
 #include <thread>
-#include <chrono>
-#include <geometry_msgs/msg/pose2_d.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/action_node.h>
-#include <memory>
-#include <vector>
-#include <string>
 #include <Eigen/Dense> // <--- 加上这个
-#include "nav_msgs/msg/odometry.hpp"
-#include "robot_interfaces/msg/low_state.hpp"
-#include "robot_interfaces/msg/motor_cmd.hpp"
-#include "locate/math_utils.h"
-#include "locate/misc.h"
 #include <stdint.h>
-#include "locate/types.h"
-#include "brain_data.h"
-#include "brain.h"
-#include "client.hpp"
 
-// using namespace std; // 建议去掉
+#include "brain.h"
+
+
+
+class Brain;
+
+using namespace std; 
 using namespace BT;
 
 // =================== 行为树主类 ===================
@@ -56,8 +46,6 @@ public:
 private:
     Tree tree;
     G1Brain *brain;
-    std::shared_ptr<BrainData> data;
-    BrainConfig config_;
     void initEntry();
 };
 // =================== MultiStageInterpolator 定义 ===================
@@ -114,36 +102,30 @@ public:
 
 private:
     YamlParser yamlparser;
-    std::shared_ptr<BrainData> data;
     G1Brain* brain;
-    BrainConfig config;
     std::chrono::high_resolution_clock::time_point lastSuccessfulLocalizeTime;
 };
 
 class Adjust : public BT::SyncActionNode {
 public:
-    Adjust(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
+    Adjust(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
 private:
-    std::shared_ptr<BrainData> data;
     G1Brain *brain;
-    BrainConfig config;
 };
 
 class CamFindBall : public BT::SyncActionNode {
 public:
-    CamFindBall(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
-    void setClient(std::shared_ptr<RobotClient> c) { client = c; }
+    CamFindBall(const string &name, const NodeConfig &config, Brain *_brain);
+
     BT::NodeStatus tick() override;
 
 private:
     std::shared_ptr<RobotClient> client;
     G1Brain *brain;
-    BrainConfig config;
+    
     using Vec2f = Eigen::Vector2f;
     Vec2f initAngle;
     Vec2f targetAngle;
@@ -161,40 +143,37 @@ private:
 
 class CamTrackBall : public BT::SyncActionNode {
 public:
-    CamTrackBall(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
+    CamTrackBall(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
 private:
     G1Brain *brain;
-    BrainConfig config;
+    
     double yaw_angle_add = 0;
     double pitch_angle_add = 0;
 };
 
-class robotTrackField : public BT::SyncActionNode {
+class Chase : public BT::SyncActionNode {
 public:
-    robotTrackField(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
+    robotTrackField(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
 private:
-    G1Brain *brain;
-    BrainConfig config;
+
+    G1Brain *brain; 
 };
 
 class Kick : public BT::SyncActionNode {
 public:
-    Kick(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
+    Kick(const string &name, const NodeConfig &config, Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
 private:
     G1Brain *brain;
-    BrainConfig config;
+    
 };
 
 class PrintMsg : public BT::SyncActionNode {
@@ -213,38 +192,15 @@ public:
 
 private:
     G1Brain *brain;
-    BrainConfig config;
+    
 };
-
-class SetVelocity : public BT::SyncActionNode {
-public:
-    SetVelocity(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
-
-    static BT::PortsList providedPorts()
-    {
-        return {
-            BT::InputPort<double>("x", "X velocity"),
-            BT::InputPort<double>("y", "Y velocity"),
-            BT::InputPort<double>("theta", "Angular velocity")
-        };
-    }
-
-    BT::NodeStatus tick() override;
-
-private:
-    G1Brain *brain;
-    BrainConfig config;
-};
-
 
 
 // =================== playerDecision 节点 ===================
 class playerDecision : public BT::SyncActionNode
 {
 public:
-    playerDecision(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
+    StrikerDecide(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -256,8 +212,4 @@ public:
     BT::NodeStatus tick() override;
 private:
     G1Brain *brain;
-    BrainConfig config;
-    bool goalSignal;
 };
-
-#endif

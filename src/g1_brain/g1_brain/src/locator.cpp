@@ -1,17 +1,21 @@
-#include "locator.h"
-#include "locate/math_utils.h"
-
-#include "locate/misc.h"
-#include "locate/types.h"
 #include <iostream>
 #include <vector>
 
-void Locator::init1(FieldDimensions fd, int minMarkerCntParam, double residualToleranceParam, double muOffestParam)
+
+#include "locator.h"
+#include "locate/math_utils.h"
+#include "locate/misc.h"
+#include "locate/types.h"
+
+
+
+
+void Locator::init(FieldDimensions fd, int minMarkerCntParam, double residualToleranceParam, double muOffestParam)
 {
     fieldDimensions = fd;
     calcFieldMarkers(fd);
     minMarkerCnt = minMarkerCntParam;
-    residualTolerance = residualToleranceParam * 2.0;
+    residualTolerance = residualToleranceParam * 2.0;           //！！注意！！，残差阈值可能不需要*2
     muOffset = muOffestParam;
 }
 
@@ -272,7 +276,10 @@ int Locator::calcProbs(vector<FieldMarker> markers_r)
 bool Locator::isConverged()
 {
     return (
-        (hypos.col(0).maxCoeff() - hypos.col(0).minCoeff() < convergeTolerance) && (hypos.col(1).maxCoeff() - hypos.col(1).minCoeff() < convergeTolerance) && (hypos.col(2).maxCoeff() - hypos.col(2).minCoeff() < convergeTolerance));
+        (hypos.col(0).maxCoeff() - hypos.col(0).minCoeff() < convergeTolerance)    // x
+        && (hypos.col(1).maxCoeff() - hypos.col(1).minCoeff() < convergeTolerance) // y
+        && (hypos.col(2).maxCoeff() - hypos.col(2).minCoeff() < convergeTolerance) // theta TODO: 考虑为 theta
+    );
 }
 
 int Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D constraintsParam, Pose2D &pose, double &avgResidual, int numParticles, double offsetXParam, double offsetYParam, double offsetThetaParam)
@@ -296,10 +303,10 @@ int Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D constraintsPar
     {
         if (isConverged())
         {
-
+            // 检查残差是否合理
             avgResidual = bestResidual / markers_r.size();
             if (avgResidual > residualTolerance)
-                return 2;
+                return 2;       // 收敛后的残差过大
 
             pose = bestPose;
             pose.theta = toPInPI(pose.theta);
@@ -307,18 +314,19 @@ int Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D constraintsPar
         }
 
         if (genParticles())
-            return 1;
+            return 1;       // 生成粒子失败
 
         if (calcProbs(markers_r))
-            return 5;
+            return 5;       // 所有概率均过低
     }
-
+    // 达到最大迭代次数, 未收敛
     return 3;
 }
 
 LocateResult Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D constraintsParam, int numParticles, double offsetXParam, double offsetYParam, double offsetThetaParam)
 {
     std::cout << "[PF] markers_r.size(): " << markers_r.size() << ", minMarkerCnt: " << minMarkerCnt << std::endl;
+    
     auto start_time = chr::high_resolution_clock::now();
     LocateResult res;
     if (markers_r.size() < minMarkerCnt) // 如果标记点数量小于最小标记点数量，返回错误
