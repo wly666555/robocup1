@@ -1,0 +1,56 @@
+#pragma once
+
+#include <string>
+#include <mutex>
+#include <vector>
+#include "locator.h"
+#include "robot_interfaces/msg/imu_state.hpp"
+#include <Eigen/Dense>
+#include "locate/math_types.h"
+
+class BrainData
+{
+public:
+    Locator locator;
+    // Robot position & velocity commands
+    Pose2D robotPoseToOdom;
+    Pose2D odomToField;
+    Pose2D robotPoseToField;
+    
+    bool odomCalibrated = false;
+
+    double headPitch;
+    double headYaw;
+    robot_interfaces::msg::IMUState cur_imu;
+
+    // Ball
+    bool ballDetected = false;
+    GameObject ball;
+    std::vector<GameObject> opponents;
+    std::vector<GameObject> goalposts;
+    std::vector<GameObject> markings;
+
+    double ballYawToPelvis;
+    Vec2<double> ballPositionInPelvis;
+    Vec2<double> ballPositionInField;
+    RotMat<double> rotMatPelvisToGlobal, rotMatGlobalToPelvis;
+    double ball_range_selected;
+    double robotBallAngleToField;
+    HomoMat2<double> homoMatPelvisToField;
+    HomoMat<double> homoMatPelvisToWorldAligned;
+    HomoMat<double> homoMatTorsoToPelvis;
+    HomoMat<double> homoMatHeadServoToTorso;
+    RotMat<double> rotMatXl330ToHeadServo;
+    HomoMat<double> homoMatXl330ToHeadServo;
+    HomoMat<double> homoMatD455ToXl330;
+    RotMat<double> rotMatCamToD455;
+    HomoMat<double> homoMatCamToD455;
+    HomoMat<double> homoMatBallToCam;
+    
+
+    Vec3<double> computeBallPosition(const RotMat<double>& rotMatPelvisToGlobal,
+                                     double waist_yaw_q,
+                                     double servo0_q,
+                                     double servo1_q,
+                                     const Vec3<double>& ball_position_in_cam);
+};

@@ -1,0 +1,14 @@
+g1_brain_node:
+  ros__parameters:
+    game.field_type: kid_size
+    game.playerStartPos: left
+    game.location_mode: normal
+
+    robot.height: 1.3
+    robot.scale_factor: 1.4
+    robot.pitch_compensation: -45.0
+    robot.yaw_compensation: 0.0
+
+    memory.ball_memory_length: 5.0
+
+    treeFilePath: "/home/unitree/wly666/g1_brain/behavior_trees/Sub_CamFindAndTrackBall.xml"
