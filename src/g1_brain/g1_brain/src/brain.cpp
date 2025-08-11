@@ -70,6 +70,7 @@ void G1Brain::tick() {
 void G1Brain::loadConfig() {
     get_parameter("game.field_type", config->fieldType);
     get_parameter("game.location_mode", config->location_mode);
+    get_parameter("game.player_start_pos", config->playerStartPos);
     get_parameter("robot.height", config->height);
     get_parameter("robot.scale_factor", config->scale_factor);
     get_parameter("robot.pitch_compensation", config->pitch_compensation);

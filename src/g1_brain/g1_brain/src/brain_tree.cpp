@@ -59,86 +59,71 @@ void BrainTree::tick()
 
 
 BT::NodeStatus SelfLocate::tick() {
-    if (!data) {
-    std::cout << "[FATAL] data is nullptr!" << std::endl;
-    return BT::NodeStatus::FAILURE;
-    }
-    if (!brain) {
-        std::cout << "[FATAL] brain is nullptr!" << std::endl;
-        return BT::NodeStatus::FAILURE;
-    }
-    
+
+    // string mode = getInput<string>("mode").value();   //可以通过行为树输入
+    double xMin = 0.0, xMax = 0.0, yMin = 0, yMax = 0.0, thetaMin = 0.0, thetaMax = 0.0; // 结束条件
     auto markers = brain->data->getMarkers();
+
     std::cout << "[DEBUG] markers.size(): " << markers.size() << std::endl;
-    for (const auto& m : markers) {
-        std::cout << "[DEBUG] marker: type=" << m.type << " x=" << m.x << " y=" << m.y << " conf=" << m.confidence << std::endl;
-    }
-    if (markers.size() < 4) {
-        std::cout << "[WARN] Not enough markers for localization!" << std::endl;
-        return BT::NodeStatus::FAILURE;
-    }
-
-    double xMin = 0.0, xMax = 0.0, yMin = 0, yMax = 0.0, thetaMin = 0.0, thetaMax = 0.0;
     
-    std::string mode = yamlparser.ReadStringFromYaml("location_mode");
 
-    if (mode == "enter_field")
+
+    if (brain->config->location_mode == "enter_field")
     {
-        xMin = -brain->fd.length / 2;
-        xMax = -brain->fd.circleRadius;
+        xMin = -brain->config->fieldDimensions.length / 2;
+        xMax = -brain->config->fieldDimensions.circleRadius;
 
-        std::string playerStartPos = yamlparser.ReadStringFromYaml("playerStartPos");
 
-        if (playerStartPos == "left")
+        if (brain->config->playerStartPos == "left")
         {
-            yMin = brain->fd.width / 2;
-            yMax = brain->fd.width / 2 + 1.0;
+            yMin = brain->config->fieldDimensions.width / 2;
+            yMax = brain->config->fieldDimensions.width / 2 + 1.0;
         }
-        else if (playerStartPos == "right")
+        else if (brain->config->playerStartPos == "right")
         {
-            yMin = -brain->fd.width / 2 - 1.0;
-            yMax = -brain->fd.width / 2;
+            yMin = -brain->config->fieldDimensions.width / 2 - 1.0;
+            yMax = -brain->config->fieldDimensions.width / 2;
         }
 
-        if (playerStartPos == "left")
+        if (brain->config->playerStartPos == "left")
         {
             thetaMin = -M_PI / 2 - M_PI / 6;
             thetaMax = -M_PI / 2 + M_PI / 6;
         }
-        else if (playerStartPos == "right")
+        else if (brain->config->playerStartPos == "right")
         {
             thetaMin = M_PI / 2 - M_PI / 6;
             thetaMax = M_PI / 2 + M_PI / 6;
         }
     }
-    else if (mode == "face_forward")
+    else if (brain->config->location_mode ==  "face_forward")
     {
-        xMin = -brain->fd.length / 2;
-        xMax = brain->fd.length / 2;
-        yMin = -brain->fd.width / 2;
-        yMax = brain->fd.width / 2;
+        xMin = -brain->config->fieldDimensions.length / 2;
+        xMax = brain->config->fieldDimensions.length / 2;
+        yMin = -brain->config->fieldDimensions.width / 2;
+        yMax = brain->config->fieldDimensions.width / 2;
         thetaMin = -M_PI / 4;
         thetaMax = M_PI / 4;
     }
-    else if (mode == "center" || (mode == "normal" && !calibrated))
+    else if (brain->config->location_mode ==  "center" || (brain->config->location_mode ==  "normal" && !calibrated))
     {
-        xMin = -brain->fd.length / 2;
-        xMax = brain->fd.length / 2;
-        yMin = -brain->fd.width / 2;
-        yMax = brain->fd.width / 2;
+        xMin = -brain->config->fieldDimensions.length / 2;
+        xMax = brain->config->fieldDimensions.length / 2;
+        yMin = -brain->config->fieldDimensions.width / 2;
+        yMax = brain->config->fieldDimensions.width / 2;
         thetaMin = -M_PI / 2;
         thetaMax = M_PI / 2;
     }
-    else if (mode == "normal" && calibrated)
+    else if (brain->config->location_mode ==  "normal" && calibrated)
     {
         int msec = msecsSince(lastSuccessfulLocalizeTime);
         double maxDriftSpeed = 0.2;
         double maxDrift = msec / 1000.0 * maxDriftSpeed;
 
-        xMin = std::max(-brain->fd.length / 2, data->robotPoseToField.x - maxDrift);
-        xMax = std::min(brain->fd.length / 2, data->robotPoseToField.x + maxDrift);
-        yMin = std::max(-brain->fd.width / 2, data->robotPoseToField.y - maxDrift);
-        yMax = std::min(brain->fd.width / 2, data->robotPoseToField.y + maxDrift);
+        xMin = std::max(-brain->config->fieldDimensions.length / 2, data->robotPoseToField.x - maxDrift);
+        xMax = std::min(brain->config->fieldDimensions.length / 2, data->robotPoseToField.x + maxDrift);
+        yMin = std::max(-brain->config->fieldDimensions.width / 2, data->robotPoseToField.y - maxDrift);
+        yMax = std::min(brain->config->fieldDimensions.width / 2, data->robotPoseToField.y + maxDrift);
         thetaMin = data->robotPoseToField.theta - M_PI / 4;
         thetaMax = data->robotPoseToField.theta + M_PI / 4;
     } else {
@@ -280,42 +265,60 @@ BT::NodeStatus Chase::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
-BT::NodeStatus CamFindBall::tick()
+CamFindBall::CamFindBall(const std::string& name, const NodeConfig& config, Brain* _brain)
+    : SyncActionNode(name, config), brain(_brain)
+{
+    // 初始化预定义动作
+    double lowPitch = 0.3;
+    double highPitch = 0.3;
+    double leftYaw = 0.3;
+    double rightYaw = -0.3;
+
+    predefinedPhases_ = {
+        {Vec2f(lowPitch, leftYaw), 200},
+        {Vec2f(lowPitch, 0.0), 500},
+        {Vec2f(lowPitch, rightYaw), 500},
+        {Vec2f(highPitch, rightYaw), 500},
+        {Vec2f(highPitch, 0.0), 500},
+        {Vec2f(highPitch, leftYaw), 500}
+    };
+}
+
+BT::NodeStatus CamFindBall::tick()          //可以尝试时间控制
 {
     constexpr float Y_SERVO_MIN = -M_PI / 3.0f;
     constexpr float Y_SERVO_MAX =  M_PI / 6.0f;
 
     if (brain->data->ballDetected)
-    {
         return BT::NodeStatus::SUCCESS;
-    }
 
-    if (firstRun)
-    {
+    // 第一次进入，初始化插值器
+    if (firstRun_) {
         Vec2f initAngle(
             brain->getMotorStates().states[0].q,
             brain->getMotorStates().states[1].q
         );
-
-        interpolator.reset(initAngle);
-
-        for (const auto& [target, duration] : predefinedPhases)
-        {
-            interpolator.addPhase(target, duration);
-        }
-        firstRun = false;
+        interpolator_.reset(initAngle);
+        for (const auto& [target, duration] : predefinedPhases_)
+            interpolator_.addPhase(target, duration);
+        firstRun_ = false;
     }
 
-    interpolator.interpolate(targetAngle);
+    Vec2f targetAngle;
+    bool inProgress = interpolator_.interpolate(targetAngle); // 每tick推进一步
 
+    // 舵机控制
     brain->getMotorCmds().states[0].mode = 1;
     brain->getMotorCmds().states[0].q = targetAngle(0);
 
     float limitedY = std::clamp(targetAngle(1), Y_SERVO_MIN, Y_SERVO_MAX);
     brain->getMotorCmds().states[1].mode = 1;
     brain->getMotorCmds().states[1].q = limitedY;
-
     brain->publishMotorCmds();
+
+    // 如果插值器全部做完了，下次tick会重启
+    if (!inProgress)
+        firstRun_ = true;
 
     return BT::NodeStatus::SUCCESS;
 }

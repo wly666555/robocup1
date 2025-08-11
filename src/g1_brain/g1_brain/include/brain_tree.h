@@ -94,10 +94,8 @@ private:
 // =================== 行为树节点类 ===================
 class SelfLocate : public BT::SyncActionNode {
 public:
-    SelfLocate(const std::string &name, const BT::NodeConfiguration& config, G1Brain *_brain, const BrainConfig& brain_config, std::shared_ptr<BrainData> _data)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config), data(_data) {}
-
-    bool isOdomCalibrated() const { return data->odomCalibrated;}
+    SelfLocate(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    
     BT::NodeStatus tick() override;
 
 private:
@@ -116,29 +114,18 @@ private:
     G1Brain *brain;
 };
 
-class CamFindBall : public BT::SyncActionNode {
+class CamFindBall : public SyncActionNode {
 public:
-    CamFindBall(const string &name, const NodeConfig &config, Brain *_brain);
-
-    BT::NodeStatus tick() override;
-
+    CamFindBall(const std::string& name, const NodeConfig& config, Brain* brain);
+ 
+    NodeStatus tick() override;
+ 
 private:
-    std::shared_ptr<RobotClient> client;
-    G1Brain *brain;
-    
     using Vec2f = Eigen::Vector2f;
-    Vec2f initAngle;
-    Vec2f targetAngle;
-    MultiStageInterpolator interpolator; // <--- 只写类型名
-    const std::vector<std::pair<Vec2f, float>> predefinedPhases = {
-        {Vec2f(0, 0),     200},
-        {Vec2f(35, -15),  500},
-        {Vec2f(35, 15),   500},
-        {Vec2f(-35, -15), 500},
-        {Vec2f(-35, 15),  500},
-        {Vec2f(0, 0),     500}
-    };
-    bool firstRun = true;
+    MultiStageInterpolator interpolator_;
+    std::vector<std::pair<Vec2f, float>> predefinedPhases_;
+    bool firstRun_ = true;
+    Brain* brain;
 };
 
 class CamTrackBall : public BT::SyncActionNode {
