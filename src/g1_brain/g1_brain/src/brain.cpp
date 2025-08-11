@@ -8,7 +8,6 @@
 
 G1Brain::G1Brain() : Node("g1_brain") {
     RCLCPP_INFO(this->get_logger(), "G1Brain node created");
-    blackboard_ = BT::Blackboard::create();
     declare_parameter<std::string>("game.field_type", "");
     declare_parameter<std::string>("game.playerStartPos", "left");
     declare_parameter<std::string>("game.location_mode", "normal");
@@ -203,14 +202,7 @@ void G1Brain::mainLoop() {
         return;
     }
 
-    bool calibrated = false;
-    if (blackboard_ && blackboard_->get("odom_calibrated", calibrated)) {
-        RCLCPP_INFO(this->get_logger(), "odomCalibrated (from blackboard): %s", calibrated ? "true" : "false");
-    } else {
-        RCLCPP_WARN(this->get_logger(), "odom_calibrated not found in blackboard, fallback to data");
-        calibrated = data->odomCalibrated;
-    }
-    RCLCPP_INFO(this->get_logger(), "odomCalibrated: %d", calibrated);
+    RCLCPP_INFO(this->get_logger(), "odomCalibrated: %d", data->odomCalibrated);
 
     if (calibrated) {
         transCoord(

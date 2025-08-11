@@ -24,7 +24,6 @@
 #include <sstream>
 #include "locate/math_utils.h"
 #include "brain_data.h"
-#include <behaviortree_cpp_v3/blackboard.h>
 
 
 class BrainTree;
@@ -47,7 +46,6 @@ public:
     void publishMotorCmds() {
         motor_cmd_pub_->publish(motor_cmds);
     }
-    BT::Blackboard::Ptr blackboard_;
     const robot_interfaces::msg::MotorStates& getMotorStates() const { return motor_states; }
     robot_interfaces::msg::MotorCmds& getMotorCmds() { return motor_cmds; }
     Locator locator;
