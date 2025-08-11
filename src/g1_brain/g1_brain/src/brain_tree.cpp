@@ -249,6 +249,69 @@ BT::NodeStatus CamTrackBall::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
+
+BT::NodeStatus robotTrackField::tick()
+{
+    double ballYawToPelvis = atan2(brain->data->ballPositionInPelvis(1), brain->data->ballPositionInPelvis(0));
+    double ballRange = sqrt(pow(brain->data->ballPositionInPelvis(0), 2) + pow(brain->data->ballPositionInPelvis(1), 2));
+    
+    double vx_chase = brain->data->ballPositionInPelvis(0);
+    double vy_chase = brain->data->ballPositionInPelvis(1);
+
+    double linearFactor = 1 / (1 + exp(3 * (ballRange * fabs(ballYawToPelvis)) - 3));
+    vx_chase *= linearFactor;
+    vy_chase *= linearFactor;
+
+    vx_chase = saturation(vx_chase, Vec2<double>(-1,1));
+    vy_chase = saturation(vy_chase, Vec2<double>(-1,1));
+
+    double vyaw_chase = ballYawToPelvis;
+    vyaw_chase = saturation(vyaw_chase, Vec2<double>(-1,1));
+
+    Vec2<double> ballPositionInField;
+    ballPositionInField(0) = brain->data->homoMatPelvisToField(0,2) + brain->data->ballPositionInPelvis(0);
+    ballPositionInField(1) = brain->data->homoMatPelvisToField(1,2) + brain->data->ballPositionInPelvis(1);
+
+    Vec2<double> vec_goal_ball_field;
+    vec_goal_ball_field(0) = 4.5 - brain->data->ballPositionInField(0);
+    vec_goal_ball_field(1) = 0 - brain->data->ballPositionInField(1);
+
+    double angle_goal_ball_field = atan2(vec_goal_ball_field(1),vec_goal_ball_field(0));
+
+    Vec2<double> vecPelvisBallField;
+    vecPelvisBallField(0) = ballPositionInField(0) - brain->data->homoMatPelvisToField(0,2);
+    vecPelvisBallField(1) = ballPositionInField(1) - brain->data->homoMatPelvisToField(1,2);
+
+    double angle_robot_ball_field = atan2(vecPelvisBallField(1),vecPelvisBallField(0));
+
+    double deltaDir = angle_goal_ball_field - angle_robot_ball_field;
+
+    double dir = deltaDir > 0 ? -1.0 : 1.0;
+
+    double s = 0.4;
+    double r = 0.8;
+
+    double vtheta = (ballYawToPelvis - dir * s) / r;
+
+    double vx_adjust = -s * dir * sin(ballYawToPelvis);
+    double vy_adjust = s * dir * cos(ballYawToPelvis);
+    vy_adjust = saturation(vy_adjust, Vec2<double>(-1,1));
+
+    double vyaw_adjust = vtheta;
+    vyaw_adjust = saturation(vtheta, Vec2<double>(-1,1));
+
+    double d_switch = 1.5;
+    double w_chase = std::clamp(ballRange / d_switch, 0.0, 1.0);
+    double w_orbit = 1.0 - w_chase;
+
+    double vx = w_chase * vx_chase + w_orbit * vx_adjust;
+    double vy = w_chase * vy_chase + w_orbit * vy_adjust;
+    double vyaw = w_chase * vyaw_chase + w_orbit * vyaw_adjust;
+
+    // brain->_interface->locoClient.Move(vx, vy, vyaw);
+    return BT::NodeStatus::SUCCESS;
+}
+
 BT::NodeStatus CamFindBall::tick()
 {
     constexpr float Y_SERVO_MIN = -M_PI / 3.0f;
