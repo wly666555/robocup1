@@ -8,14 +8,19 @@
 #include <Eigen/Dense>
 #include "locate/math_types.h"
 
+
+/**
+ * BrainData 类，记录 Brain 在决策中需要用到的所在数据
+ */
+
 class BrainData
 {
 public:
     Locator locator;
     // Robot position & velocity commands
-    Pose2D robotPoseToOdom;
-    Pose2D odomToField;
-    Pose2D robotPoseToField;  //机器人场地位置
+    Pose2D robotPoseToOdom;         // 机器人在 Odom 坐标系中的 Pose, 通过 odomCallback 更新数据
+    Pose2D odomToField;             // Odom 坐标系原点在 Field 坐标系中的位置和方向.  可通过已知位置进行校准, 例如上场时根据上场点校准
+    Pose2D robotPoseToField;        // 机器人当前在球场坐标系中的位置和方向. 球场中心为原点, x 轴指向对方球门(前方), y 轴指向左方. 逆时针为 theta 正方向.
     
     bool odomCalibrated = false;
 
