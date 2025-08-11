@@ -76,15 +76,12 @@ void G1Brain::tick() {
 
 void G1Brain::loadConfig() {
     get_parameter("game.field_type", config->fieldType);
-    config->playerStartPos = this->get_parameter("game.playerStartPos").as_string();
-    config->location_mode = this->get_parameter("game.location_mode").as_string();
-
-    config->height = this->get_parameter("robot.height").as_double();
-    config->scale_factor = this->get_parameter("robot.scale_factor").as_double();
-    config->pitch_compensation = this->get_parameter("robot.pitch_compensation").as_double();
-    config->yaw_compensation = this->get_parameter("robot.yaw_compensation").as_double();
-
-    config->memoryLength = this->get_parameter("memory.ball_memory_length").as_double();
+    get_parameter("game.location_mode", config->location_mode);
+    get_parameter("robot.height", config->height);
+    get_parameter("robot.scale_factor", config->scale_factor);
+    get_parameter("robot.pitch_compensation", config->pitch_compensation);
+    get_parameter("robot.yaw_compensation", config->yaw_compensation);
+    get_parameter("memory.ball_memory_length", config->ball_memory_length);
 
     odometry_factor_ = config->scale_factor;
     servo_pitch_compensation_ = config->pitch_compensation;
