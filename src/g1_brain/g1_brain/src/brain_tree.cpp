@@ -87,8 +87,8 @@ void BrainTree::initEntry()
 
 void BrainTree::tick()
 {
-    tree.tickRoot();
-    RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "After tree.tickRoot()");
+    tree.tickWhileRunning(0ms);
+    RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "After tree.tickWhileRunning(0ms)");
 }
 
 // =================== 节点实现 ===================
