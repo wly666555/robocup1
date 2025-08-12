@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
     
     // Brain 对象
-    std::shared_ptr<Brain> brain = std::make_shared<Brain>();
+    std::shared_ptr<G1Brain> brain = std::make_shared<G1Brain>();
 
     // 执行初始化操作：读取参数，构建 BehaviorTree 等
     brain->init();

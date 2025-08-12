@@ -73,7 +73,7 @@ void G1Brain::tick() {
 void G1Brain::loadConfig() {
     get_parameter("game.field_type", config->fieldType);
     get_parameter("game.location_mode", config->location_mode);
-    get_parameter("game.player_start_pos", config->playerStartPos);
+    get_parameter("game.playerStartPos", config->playerStartPos);
     get_parameter("robot.height", config->height);
     get_parameter("robot.scale_factor", config->scale_factor);
     get_parameter("robot.pitch_compensation", config->pitch_compensation);
@@ -89,7 +89,7 @@ void G1Brain::loadConfig() {
     RCLCPP_INFO(this->get_logger(), "Configuration loaded");
 }
 
-double Brain::msecsSince(rclcpp::Time time)
+double G1Brain::msecsSince(rclcpp::Time time)
 {
     return (this->get_clock()->now() - time).nanoseconds() / 1e6;
 }
@@ -105,9 +105,10 @@ void G1Brain::updateBallMemory() {
     double servo1_angle = -deg2rad(motor_states.states[1].q);
 
     // 用 posToRobot 构造 Vec2
-    Vec2<double> ball_pos_in_cam(
+    Vec3<double> ball_pos_in_cam(
         data->ballPositionInPelvis[0],
         data->ballPositionInPelvis[1],
+        0.0
     );
 
     // 假设 compute_ball_position 返回 Vec3<double>
@@ -118,12 +119,11 @@ void G1Brain::updateBallMemory() {
         servo1_angle,
         ball_pos_in_cam
     );
-    homoMatPelvisToField = homoMatrix(rotMat2D(locateResult->msg_.robot2field_theta()),Vec2<double>(locateResult->msg_.robot2field_x(),locateResult->msg_.robot2field_y()));
-    HomoMat<double> homoMatBallToWorldAligned =  data->homoMatPelvisToWorldAligned * data->homoMatTorsoToPelvis * data->homoMatHeadServoToTorso  *  data->homoMatXl330ToHeadServo * data->homoMatD455ToXl330 * data->homoMatCamToD455 * data->homoMatBallToCam;
-    double yaw_to_pelvis =  atan2(homoMatBallToWorldAligned(1,3),homoMatBallToWorldAligned(0,3));
-    double x = homoMatBallToWorldAligned(0,3);
-    double y = homoMatBallToWorldAligned(1,3);
-    double z = homoMatBallToWorldAligned(2,3);
+    data->homoMatPelvisToField = homoMatrix(rotMat2D(data->robotPoseToField.theta), Vec2<double>(data->robotPoseToField.x,data->robotPoseToField.y));
+    double yaw_to_pelvis =  atan2(data->homoMatBallToWorldAligned(1,3),data->homoMatBallToWorldAligned(0,3));
+    double x = data->homoMatBallToWorldAligned(0,3);
+    double y = data->homoMatBallToWorldAligned(1,3);
+    double z = data->homoMatBallToWorldAligned(2,3);
     // 计算长度和高度
     double length = std::sqrt(ball_global[0] * ball_global[0] + ball_global[1] * ball_global[1]);
 
@@ -135,13 +135,13 @@ void G1Brain::updateBallMemory() {
     else
     {
         // 这里假设 homoMatBallToWorldAligned 已经被正确赋值
-        data->ballYawToPelvis = atan2(homoMatBallToWorldAligned(1,3), homoMatBallToWorldAligned(0,3));
-        data->ballPositionInPelvis << homoMatBallToWorldAligned(0,3), homoMatBallToWorldAligned(1,3);
+        data->ballYawToPelvis = atan2(data->homoMatBallToWorldAligned(1,3), data->homoMatBallToWorldAligned(0,3));
+        data->ballPositionInPelvis << data->homoMatBallToWorldAligned(0,3), data->homoMatBallToWorldAligned(1,3);
         data->ballPositionInField = dehomoVec(data->homoMatPelvisToField * homoVec(data->ballPositionInPelvis));
-        data->ballRange = sqrt(pow(brain->data->ballPositionInPelvis(0), 2) + pow(brain->data->ballPositionInPelvis(1), 2));
-        double x_T = homoMatBallToWorldAligned(0,3);
-        double y_T = homoMatBallToWorldAligned(1,3);
-        double z_T = homoMatBallToWorldAligned(2,3);
+        data->ballRange = sqrt(pow(data->ballPositionInPelvis(0), 2) + pow(data->ballPositionInPelvis(1), 2));
+        double x_T = data->homoMatBallToWorldAligned(0,3);
+        double y_T = data->homoMatBallToWorldAligned(1,3);
+        double z_T = data->homoMatBallToWorldAligned(2,3);
         data->ball_range_selected = std::sqrt(x_T * x_T + y_T * y_T);
     } 
 }
@@ -188,10 +188,10 @@ void G1Brain::lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr 
 }
 
 void G1Brain::servoStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg) {
-    if (!msg->states.empty()) {
-        client->currentHeadYaw_ = msg->states[0].q;
-        client->currentHeadPitch_ = 0.0;
-    }// 处理舵机状态回调
+    // if (!msg->states.empty()) {
+    //     client->currentHeadYaw_ = msg->states[0].q;
+    //     client->currentHeadPitch_ = 0.0;
+    // }// 处理舵机状态回调
     RCLCPP_DEBUG(this->get_logger(), "Received motor states");
 }
 

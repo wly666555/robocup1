@@ -13,7 +13,7 @@
 #define REGISTER_BUILDER(Name)     \
     factory.registerBuilder<Name>( \
         #Name,                     \
-        [this](const string &name, const NodeConfig &config) { return make_unique<Name>(name, config, brain); });
+        [this](const string &name, const NodeConfiguration &config) { return make_unique<Name>(name, config, brain); });
 
 
 void BrainTree::init()
@@ -105,7 +105,7 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = -M_PI / 4;
         thetaMax = M_PI / 4;
     }
-    else if (brain->config->location_mode ==  "center" || (brain->config->location_mode ==  "normal" && !calibrated))
+    else if (brain->config->location_mode ==  "center" || (brain->config->location_mode ==  "normal" && !"odom_calibrated"))
     {
         xMin = -brain->config->fieldDimensions.length / 2;
         xMax = brain->config->fieldDimensions.length / 2;
@@ -114,9 +114,9 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = -M_PI / 2;
         thetaMax = M_PI / 2;
     }
-    else if (brain->config->location_mode ==  "normal" && calibrated)
+    else if (brain->config->location_mode ==  "normal" && "odom_calibrated")
     {
-        int msec = msecsSince(lastSuccessfulLocalizeTime);
+        int msec = brain->msecsSince(lastSuccessfulLocalizeTime);
         double maxDriftSpeed = 0.2;
         double maxDrift = msec / 1000.0 * maxDriftSpeed;
 
@@ -127,7 +127,7 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = data->robotPoseToField.theta - M_PI / 4;
         thetaMax = data->robotPoseToField.theta + M_PI / 4;
     } else {
-        std::cout << "[ERROR]: Unsupported mode, " << mode << std::endl;
+        std::cout << "[ERROR]: Unsupported mode, " << brain->config->location_mode << std::endl;
         return BT::NodeStatus::SUCCESS;
     }
 
@@ -152,7 +152,7 @@ BT::NodeStatus SelfLocate::tick() {
 
 BT::NodeStatus Adjust::tick()
 {
-    if(!brain->tree->get_Entry<bool>("ball_location_known"))
+    if(!brain->tree->getEntry<bool>("ball_location_known"))
     {
         return BT::NodeStatus::SUCCESS; 
     }
@@ -213,9 +213,9 @@ BT::NodeStatus CamTrackBall::tick()
 
 BT::NodeStatus Chase::tick()
 {
-    if(!brain->tree->get_Entry<bool>("ball_location_known"))
+    if(!brain->tree->getEntry<bool>("ball_location_known"))
     {
-        client->Move(0,0,0);
+        brain->client->Move(0,0,0);
         return BT::NodeStatus::SUCCESS; 
     }
     double vx_chase = brain->data->ballPositionInPelvis(0);
@@ -266,7 +266,7 @@ BT::NodeStatus Chase::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
-CamFindBall::CamFindBall(const std::string& name, const NodeConfig& config, Brain* _brain)
+CamFindBall::CamFindBall(const std::string& name, const NodeConfiguration& config, G1Brain* _brain)
     : SyncActionNode(name, config), brain(_brain)
 {
     // 初始化预定义动作
@@ -406,11 +406,11 @@ BT::NodeStatus playerDecision::tick()
     std::string decision;
     if(brain->data->ballPositionInField(0)> 4.6||abs(brain->data->ballPositionInField(1))>3)
     {
-        goalSignal = true;
+        data->goalSignal = true;
     }
     else
     {
-        goalSignal = false;
+        data->goalSignal = false;
     }
 
     bool enableCamFindBallNode;
@@ -439,7 +439,7 @@ BT::NodeStatus playerDecision::tick()
     double anglePlevisBallfield = atan2(vecPelvisBallField(1),vecPelvisBallField(0));
 
     double biasAngle = angleBallGoalField - anglePlevisBallfield;
-    if(goalSignal|| ((abs(brain->data->ballYawToPelvis)<=0.20) && (abs(brain->data->ballPositionInPelvis(0)) <= 0.55) && (abs(brain->data->ballPositionInPelvis(1)) <= 0.3)))
+    if(data->goalSignal|| ((abs(brain->data->ballYawToPelvis)<=0.20) && (abs(brain->data->ballPositionInPelvis(0)) <= 0.55) && (abs(brain->data->ballPositionInPelvis(1)) <= 0.3)))
     {
         enableRobotTrackFieldNode = false;
     }
@@ -456,7 +456,7 @@ BT::NodeStatus playerDecision::tick()
     {
         decision = "robotTrackField";
     }
-    else if(!goalSignal)
+    else if(!data->goalSignal)
     {
         decision = "kick";
     }

@@ -33,7 +33,7 @@ add_executable(g1_brain
     src/brain_tree.cpp
     src/brain_config.cpp
     src/brain_data.cpp
-    src/robot_client.cpp
+    src/client.cpp
     src/pose.cpp
 )
 

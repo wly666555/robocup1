@@ -10,12 +10,10 @@
 #include <behaviortree_cpp_v3/action_node.h>
 #include <Eigen/Dense> // <--- 加上这个
 #include <stdint.h>
-
 #include "brain.h"
 
 
-
-class Brain;
+class G1Brain;
 
 using namespace std; 
 using namespace BT;
@@ -46,6 +44,7 @@ public:
 private:
     Tree tree;
     G1Brain *brain;
+
     void initEntry();
 };
 // =================== MultiStageInterpolator 定义 ===================
@@ -94,29 +93,31 @@ private:
 // =================== 行为树节点类 ===================
 class SelfLocate : public BT::SyncActionNode {
 public:
-    SelfLocate(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    SelfLocate(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
     
     BT::NodeStatus tick() override;
 
 private:
+    BrainData *data;
     YamlParser yamlparser;
     G1Brain* brain;
-    std::chrono::high_resolution_clock::time_point lastSuccessfulLocalizeTime;
+    rclcpp::Time lastSuccessfulLocalizeTime;
 };
 
 class Adjust : public BT::SyncActionNode {
 public:
-    Adjust(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    Adjust(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
 private:
     G1Brain *brain;
+    BrainData *data;
 };
 
 class CamFindBall : public SyncActionNode {
 public:
-    CamFindBall(const std::string& name, const NodeConfig& config, Brain* brain);
+    CamFindBall(const std::string& name, const NodeConfiguration& config, G1Brain* brain);
  
     NodeStatus tick() override;
  
@@ -125,12 +126,12 @@ private:
     MultiStageInterpolator interpolator_;
     std::vector<std::pair<Vec2f, float>> predefinedPhases_;
     bool firstRun_ = true;
-    Brain* brain;
+    G1Brain* brain;
 };
 
 class CamTrackBall : public BT::SyncActionNode {
 public:
-    CamTrackBall(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    CamTrackBall(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -143,18 +144,18 @@ private:
 
 class Chase : public BT::SyncActionNode {
 public:
-    robotTrackField(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    Chase(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
 private:
-
+    BrainData *data;
     G1Brain *brain; 
 };
 
 class Kick : public BT::SyncActionNode {
 public:
-    Kick(const string &name, const NodeConfig &config, Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
+    Kick(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -165,8 +166,7 @@ private:
 
 class PrintMsg : public BT::SyncActionNode {
 public:
-    PrintMsg(const std::string& name, const BT::NodeConfiguration& config, G1Brain* _brain, const BrainConfig& brain_config)
-        : SyncActionNode(name, config), brain(_brain), config(brain_config) {}
+    PrintMsg(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -187,7 +187,7 @@ private:
 class playerDecision : public BT::SyncActionNode
 {
 public:
-    StrikerDecide(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    playerDecision(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -198,5 +198,6 @@ public:
 
     BT::NodeStatus tick() override;
 private:
+    BrainData *data;
     G1Brain *brain;
 };

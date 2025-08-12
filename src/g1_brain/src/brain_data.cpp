@@ -39,7 +39,7 @@ Vec3<double> BrainData::computeBallPosition(
     double waist_yaw_q,
     double servo0_q,
     double servo1_q,
-    const Vec2<double>& ball_position_in_cam)
+    const Vec3<double>& ball_position_in_cam)
 {
     // 从IMU四元数获取旋转矩阵(如果未传入)
     RotMat<double> actualRotMat = rotMatPelvisToGlobal;
@@ -74,7 +74,7 @@ Vec3<double> BrainData::computeBallPosition(
     
 
     // 组合所有变换
-    HomoMat<double> homoMatBallToWorld =
+    HomoMat<double> homoMatBallToWorldAligned =
         homoMatPelvisToWorldAligned *
         homoMatTorsoToPelvis *
         homoMatHeadServoToTorso *
@@ -85,9 +85,9 @@ Vec3<double> BrainData::computeBallPosition(
 
     // 返回球在全局坐标系中的位置
     return Vec3<double>(
-        homoMatBallToWorld(0, 3),
-        homoMatBallToWorld(1, 3),
-        homoMatBallToWorld(2, 3)
+        homoMatBallToWorldAligned(0, 3),
+        homoMatBallToWorldAligned(1, 3),
+        homoMatBallToWorldAligned(2, 3)
     );
 }
 

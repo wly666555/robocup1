@@ -3,7 +3,7 @@
 
 
 #include "brain.h"
-#include "robot_client.hpp"
+#include "robot_client.h"
 
 
 void RobotClient::init() 
@@ -44,8 +44,7 @@ void RobotClient::StandUp() {
     req_puber_->publish(req);
 }
 
-void RobotClient::Move(float vx, float vy,
-                       float vyaw) {
+void RobotClient::Move(float vx, float vy, float vyaw) {
     unitree_api::msg::Request req;
     nlohmann::json js;
     js["x"] = vx;

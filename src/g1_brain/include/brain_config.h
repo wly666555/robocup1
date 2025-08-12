@@ -42,7 +42,7 @@ public:
     double vthetaLimit = 2.0;
     
     // 记忆相关参数
-    double memoryLength= 3.0;  // 球位置记忆时间（秒）
+    double ball_memory_length= 3.0;  // 球位置记忆时间（秒）
 
     // BrainNode 填充完参数后，调用 handle() 进行一些参数的处理（校正、计算等）,成功返回 true
     void handle() ;

@@ -15,16 +15,17 @@
 
 using namespace std;
 
-class Brain; // 类相互依赖，向前声明
+class G1Brain; // 类相互依赖，向前声明
 
 
 class RobotClient {
 public:
-    RobotClient(Brain* argBrain) : brain(argBrain) {}
-
+    RobotClient(G1Brain* argBrain) : brain(argBrain) {}
+    void Move(float vx, float vy, float vyaw);
     void init();
     void moveHead(double pitch, double yaw);
     void StandUp();
+    rclcpp::Node::SharedPtr node_;
 
 private:
 
@@ -35,7 +36,7 @@ private:
     rclcpp::Publisher<unitree_api::msg::Request>::SharedPtr req_puber_;
     rclcpp::Subscription<unitree_api::msg::Response>::SharedPtr req_suber_;
 
-    Brain *brain;
+    G1Brain *brain;
 
 
 

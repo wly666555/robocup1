@@ -4,7 +4,7 @@
 #include <mutex>
 #include <vector>
 #include <Eigen/Dense>
-
+#include "rclcpp/rclcpp.hpp"
 #include "locator.h"
 #include "robot_interfaces/msg/imu_state.hpp"
 
@@ -39,7 +39,8 @@ public:
     bool ballDetected = false;
     GameObject ball;
     double robotBallAngleToField;       // 机器人到球的向量, 在球场坐标系中与 X 轴的夹角, (-PI,PI]
-
+    //goal
+    bool goalSignal;
 
     Vec2<double> ballPositionInPelvis;
     double ballYawToPelvis;
@@ -67,13 +68,13 @@ public:
     RotMat<double> rotMatCamToD455;
     HomoMat<double> homoMatCamToD455;
     HomoMat<double> homoMatBallToCam;
-    
+    HomoMat<double> homoMatBallToWorldAligned;
 
     Vec3<double> computeBallPosition(const RotMat<double>& rotMatPelvisToGlobal,
                                     double waist_yaw_q,
                                     double servo0_q,
                                     double servo1_q,
-                                    const Vec2<double>& ball_position_in_cam);
+                                    const Vec3<double>& ball_position_in_cam);
 
     vector<FieldMarker> getMarkers();   
 };

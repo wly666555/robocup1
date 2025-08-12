@@ -14,15 +14,14 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include "nav_msgs/msg/odometry.hpp"
 #include "robot_interfaces/msg/low_state.hpp"
-
 #include "locate/yaml_parser.h"
-
+#include "locate/pose.h"
 // 添加roboCup_sdk依赖
 #include "brain_config.h"
 #include "brain_data.h"
 #include "brain_tree.h"
 
-#include "robot_client.hpp"
+#include "robot_client.h"
 #include "locator.h"
 
 
