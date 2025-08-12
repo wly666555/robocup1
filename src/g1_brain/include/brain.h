@@ -61,14 +61,16 @@ public:
 
     void tick();
 
+    vector<double> getGoalPostAngles(const double margin = 0.3);
+
     void calibrateOdom(double x, double y, double theta);
 
     double msecsSince(rclcpp::Time time);
 
 
+
     void publishMotorCmds() {
-        motor_cmd_pub_->publish(motor_cmds);
-    }
+        motor_cmd_pub_->publish(motor_cmds);}
     const robot_interfaces::msg::MotorStates& getMotorStates() const { return motor_states; }
     robot_interfaces::msg::MotorCmds& getMotorCmds() { return motor_cmds; }
 
@@ -82,7 +84,7 @@ private:
     double servo_yaw_compensation_{0.0};
     double servo_height_{0.0};
 
-    // 参数声明
+
     void loadConfig();
     
     // 记忆更新
@@ -107,7 +109,7 @@ private:
     
 
     // 检测处理
-    nav_msgs::msg::Odometry last_odom_;
+    nav_msgs::msg::Odometry last_odom_;   //!!修改！！
     robot_interfaces::msg::LowState low_state;
     robot_interfaces::msg::MotorStates motor_states;
     robot_interfaces::msg::MotorState motor_state;

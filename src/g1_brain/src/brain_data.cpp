@@ -35,11 +35,7 @@ std::vector<FieldMarker> BrainData::getMarkers()
 
 
 Vec3<double> BrainData::computeBallPosition(
-    const RotMat<double>& rotMatPelvisToGlobal,
-    double waist_yaw_q,
-    double servo0_q,
-    double servo1_q,
-    const Vec3<double>& ball_position_in_cam)
+    const RotMat<double>& rotMatPelvisToGlobal,double waist_yaw_q,double servo0_q,double servo1_q,const Vec3<double>& ball_position_in_cam)
 {
     // 从IMU四元数获取旋转矩阵(如果未传入)
     RotMat<double> actualRotMat = rotMatPelvisToGlobal;
@@ -92,3 +88,27 @@ Vec3<double> BrainData::computeBallPosition(
 }
 
 
+Pose2D BrainData::robot2field(const Pose2D &poseToRobot)
+{
+    Pose2D poseToField;
+    transCoord(
+        poseToRobot.x, poseToRobot.y, poseToRobot.theta,
+        robotPoseToField.x, robotPoseToField.y, robotPoseToField.theta,
+        poseToField.x, poseToField.y, poseToField.theta);
+    poseToField.theta = toPInPI(poseToField.theta);
+    return poseToField;
+}
+
+Pose2D BrainData::field2robot(const Pose2D &poseToField)
+{
+    Pose2D poseToRobot;
+    double xfr, yfr, thetafr; // fr = field to robot
+    yfr = sin(robotPoseToField.theta) * robotPoseToField.x - cos(robotPoseToField.theta) * robotPoseToField.y;
+    xfr = -cos(robotPoseToField.theta) * robotPoseToField.x - sin(robotPoseToField.theta) * robotPoseToField.y;
+    thetafr = -robotPoseToField.theta;
+    transCoord(
+        poseToField.x, poseToField.y, poseToField.theta,
+        xfr, yfr, thetafr,
+        poseToRobot.x, poseToRobot.y, poseToRobot.theta);
+    return poseToRobot;
+}

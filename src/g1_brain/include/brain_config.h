@@ -26,19 +26,22 @@ public:
     string fieldType; // 球场类型
     string location_mode;
     string playerStartPos;
-    std::string treeFilePath;
-
+    string playerRole; 
 
     FieldDimensions fieldDimensions; // 球场尺寸
+    
     // 机器人相关参数
     double pitch_compensation;
     double yaw_compensation;
     double height;
     double scale_factor;
 
+
+    std::string treeFilePath;
+
     // 速度上限
     double vxLimit = 2.0;
-    double vyLimit = 0.7;
+    double vyLimit = 2.0;
     double vthetaLimit = 2.0;
     
     // 记忆相关参数

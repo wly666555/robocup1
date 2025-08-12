@@ -96,12 +96,21 @@ public:
     SelfLocate(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
     
     BT::NodeStatus tick() override;
+    
+    static PortsList providedPorts()
+    {
+        return {
+            InputPort<string>("mode", "enter_field", "must be one of [enter_field, trust_direction, trust_position, trust_nothing, face_forward]"),
+            // enter_field: 上场时使用，此时必然在已方半场，且可以根据已方球门的位置进一步缩小方向范围
+            // trust_direction: 正常情况下使用，此时 odom 信息大体上是准确的（未摔倒过）
+            // trust_position: 使用于摔倒后，此时 x,y 可信，但方向不可信。（注意，如果此时在中线附近，则因为球场的对称性，需认为位置也不可信）
+            // trust_nothing: 极限情况，认为 x,y 也不可信，需要先通过标志物辨别方向。
+            // face_forward: 面向对方球门的方向, 主要用于测试
+        };
+    };
 
 private:
-    BrainData *data;
-    YamlParser yamlparser;
     G1Brain* brain;
-    rclcpp::Time lastSuccessfulLocalizeTime;
 };
 
 class Adjust : public BT::SyncActionNode {
@@ -112,7 +121,6 @@ public:
 
 private:
     G1Brain *brain;
-    BrainData *data;
 };
 
 class CamFindBall : public SyncActionNode {
@@ -137,31 +145,41 @@ public:
 
 private:
     G1Brain *brain;
-    
-    double yaw_angle_add = 0;
-    double pitch_angle_add = 0;
 };
 
 class Chase : public BT::SyncActionNode {
 public:
     Chase(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
+    static PortsList providedPorts()
+    {
+        return {
+            InputPort<double>("dist", 1.0, "追球的目标是球后面多少距离"),
+        };
+    }
     BT::NodeStatus tick() override;
 
 private:
-    BrainData *data;
     G1Brain *brain; 
+    string _state;
+    double _dir = 1.0;  //+为右
+
 };
 
-class Kick : public BT::SyncActionNode {
+class Kick : public StatefulActionNode {
 public:
     Kick(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
-    BT::NodeStatus tick() override;
+    NodeStatus onStart() override;
+
+    NodeStatus onRunning() override;
+
+    void onHalted() override;
 
 private:
     G1Brain *brain;
-    
+    rclcpp::Time _startTime;
+    int _msecKick = 1000;
 };
 
 class PrintMsg : public BT::SyncActionNode {
@@ -182,9 +200,26 @@ private:
     
 };
 
+class SetVelocity : public SyncActionNode
+{
+public:
+    SetVelocity(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
+    NodeStatus tick() override;
+    static PortsList providedPorts()
+    {
+        return {
+            InputPort<double>("x", 0, "Default x is 0"),
+            InputPort<double>("y", 0, "Default y is 0"),
+            InputPort<double>("theta", 0, "Default  theta is 0"),
+        };
+    }
+
+private:
+    Brain *brain;
+};
 // =================== playerDecision 节点 ===================
-class playerDecision : public BT::SyncActionNode
+class StrikerDecide : public BT::SyncActionNode
 {
 public:
     playerDecision(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
@@ -192,12 +227,34 @@ public:
     static BT::PortsList providedPorts()
     {
         return {
-            BT::OutputPort<std::string>("decision", "decision string")
-        };
+            InputPort<double>("chase_threshold", 1.0, "超过这个距离, 执行追球动作"),
+            InputPort<string>("decision_in", "", "用于读取上一次的 decision"),
+            OutputPort<std::string>("decision", "decision string")};
     }
 
     BT::NodeStatus tick() override;
 private:
-    BrainData *data;
     G1Brain *brain;
+};
+
+
+class GoalieDecide : public SyncActionNode
+{
+public:
+    GoalieDecide(const std::string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+
+    static BT::PortsList providedPorts()
+    {
+        return {
+            InputPort<double>("chase_threshold", 1.0, "超过这个距离, 执行追球动作"),
+            InputPort<double>("adjust_angle_tolerance", 0.1, "小于这个角度, 认为 adjust 已经成功"),
+            InputPort<double>("adjust_y_tolerance", 0.1, "y 方向偏移小于这个值, 认为 y 方向 adjust 成功"),
+            InputPort<string>("decision_in", "", "用于读取上一次的 decision"),
+            OutputPort<string>("decision_out")};
+    }
+
+    BT::NodeStatus tick() override;
+
+private:
+    Brain *brain;
 };

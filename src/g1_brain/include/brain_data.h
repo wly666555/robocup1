@@ -44,6 +44,7 @@ public:
 
     Vec2<double> ballPositionInPelvis;
     double ballYawToPelvis;
+    double ballPitchToPelvis;
     Vec2<double> ballPositionInField;   //球在场地位置
     double ballRange;                   // 物体距离机器人中心在物体场平面上的投影点的直线距离
 
@@ -77,4 +78,8 @@ public:
                                     const Vec3<double>& ball_position_in_cam);
 
     vector<FieldMarker> getMarkers();   
+    // 将一个 Pose 从 robot 坐标系转到 field 坐标系
+    Pose2D robot2field(const Pose2D &poseToRobot);
+    // 将一个 Pose 从 field 坐标系转到 robot 坐标系
+    Pose2D field2robot(const Pose2D &poseToField);
 };

@@ -4,9 +4,7 @@
 #include <thread>
 #include <chrono>
 #include "brain_tree.h"
-#include "brain_data.h"
 #include "locate/yaml_parser.h"
-#include "locator.h"
 #include "brain.h"
 
 // 注册节点时的宏（你可以用 lambda注册，见头文件说明）
@@ -23,10 +21,12 @@ void BrainTree::init()
     REGISTER_BUILDER(Chase)
     REGISTER_BUILDER(Adjust)
     REGISTER_BUILDER(Kick)
-    REGISTER_BUILDER(playerDecision)
+    REGISTER_BUILDER(StrikerDecide)
+    REGISTER_BUILDER(GoalieDecide)
     REGISTER_BUILDER(CamTrackBall)
     REGISTER_BUILDER(CamFindBall)
     REGISTER_BUILDER(SelfLocate)
+    REGISTER_BUILDER(SetVelocity)
     
 
     factory.registerBehaviorTreeFromFile(this->brain->config->treeFilePath);
@@ -60,7 +60,7 @@ void BrainTree::tick()
 
 BT::NodeStatus SelfLocate::tick() {
 
-    // string mode = getInput<string>("mode").value();   //可以通过行为树输入
+    string mode = getInput<string>("mode").value();   //可以通过行为树输入
     double xMin = 0.0, xMax = 0.0, yMin = 0, yMax = 0.0, thetaMin = 0.0, thetaMax = 0.0; // 结束条件
     auto markers = brain->data->getMarkers();
 
@@ -68,7 +68,7 @@ BT::NodeStatus SelfLocate::tick() {
     
 
 
-    if (brain->config->location_mode == "enter_field")
+    if (mode == "enter_field")
     {
         xMin = -brain->config->fieldDimensions.length / 2;
         xMax = -brain->config->fieldDimensions.circleRadius;
@@ -96,7 +96,7 @@ BT::NodeStatus SelfLocate::tick() {
             thetaMax = M_PI / 2 + M_PI / 6;
         }
     }
-    else if (brain->config->location_mode ==  "face_forward")
+    else if (mode ==  "face_forward")
     {
         xMin = -brain->config->fieldDimensions.length / 2;
         xMax = brain->config->fieldDimensions.length / 2;
@@ -105,7 +105,7 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = -M_PI / 4;
         thetaMax = M_PI / 4;
     }
-    else if (brain->config->location_mode ==  "center" || (brain->config->location_mode ==  "normal" && !"odom_calibrated"))
+    else if (mode ==  "center" || (brain->config->location_mode ==  "normal" && !"odom_calibrated"))
     {
         xMin = -brain->config->fieldDimensions.length / 2;
         xMax = brain->config->fieldDimensions.length / 2;
@@ -114,18 +114,18 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = -M_PI / 2;
         thetaMax = M_PI / 2;
     }
-    else if (brain->config->location_mode ==  "normal" && "odom_calibrated")
+    else if (mode ==  "normal" && "odom_calibrated")
     {
-        int msec = brain->msecsSince(lastSuccessfulLocalizeTime);
+        int msec = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
         double maxDriftSpeed = 0.2;
         double maxDrift = msec / 1000.0 * maxDriftSpeed;
 
-        xMin = std::max(-brain->config->fieldDimensions.length / 2, data->robotPoseToField.x - maxDrift);
-        xMax = std::min(brain->config->fieldDimensions.length / 2, data->robotPoseToField.x + maxDrift);
-        yMin = std::max(-brain->config->fieldDimensions.width / 2, data->robotPoseToField.y - maxDrift);
-        yMax = std::min(brain->config->fieldDimensions.width / 2, data->robotPoseToField.y + maxDrift);
-        thetaMin = data->robotPoseToField.theta - M_PI / 4;
-        thetaMax = data->robotPoseToField.theta + M_PI / 4;
+        xMin = std::max(-brain->config->fieldDimensions.length / 2, brain->data->robotPoseToField.x - maxDrift);
+        xMax = std::min(brain->config->fieldDimensions.length / 2, brain->data->robotPoseToField.x + maxDrift);
+        yMin = std::max(-brain->config->fieldDimensions.width / 2, brain->data->robotPoseToField.y - maxDrift);
+        yMax = std::min(brain->config->fieldDimensions.width / 2, brain->data->robotPoseToField.y + maxDrift);
+        thetaMin = brain->data->robotPoseToField.theta - M_PI / 4;
+        thetaMax = brain->data->robotPoseToField.theta + M_PI / 4;
     } else {
         std::cout << "[ERROR]: Unsupported mode, " << brain->config->location_mode << std::endl;
         return BT::NodeStatus::SUCCESS;
@@ -157,30 +157,32 @@ BT::NodeStatus Adjust::tick()
         return BT::NodeStatus::SUCCESS; 
     }
 
+    double vx = 0, vy = 0, vtheta = 0;
+    double vxLimit = 1.0;
+    double vyLimit = 0.8;
+    double vthetaLimit = 1.0;
+
+
+    double kickDir = atan2(-brain->data->ballPositionInField[1], brain->config->fieldDimensions.length / 2 - brain->data->ballPositionInField[0]);
+    double dir_rb_f = brain->data->robotBallAngleToField;
+    double deltaDir = toPInPI(kickDir - dir_rb_f);
+    double dir = deltaDir > 0 ? -1.0 : 1.0;
+    double ballRange = brain->data->ballRange;
+    double ballYaw = brain->data->ballYawToPelvis;
+
+
     double s = 0.4;
     double r = 0.8;
-    Vec2<double> vec_goal_ball_field;
-    vec_goal_ball_field(0) = 4.5 - brain->data->ballPositionInField(0);
-    vec_goal_ball_field(1) = 0 - brain->data->ballPositionInField(1);
 
-    double angle_goal_ball_field = atan2(vec_goal_ball_field(1),vec_goal_ball_field(0));
-
-
-    double deltaDir = toPInPI(angle_goal_ball_field - data->robotBallAngleToField);
-
-    double dir = deltaDir > 0 ? -1.0 : 1.0;
+    vx = -s * dir * sin(ballYaw);
+    vy = s * dir * cos(ballYaw);
+    vtheta = (ballYaw - dir * s) / r;
 
 
-
-    double vx = -s * dir * sin(data->ballYawToPelvis);
-    double vy = s * dir * cos(data->ballYawToPelvis);
-    vx = saturation(vx, Vec2<double>(-1.2,1.2));
-    vy = saturation(vy, Vec2<double>(-1.2,1.2));
-
-    double vyaw = (data->ballYawToPelvis-dir*s)/r;
-    vyaw = saturation(vyaw, Vec2<double>(-1.2,1.2));
-
-    // brain->_interface->locoClient.Move(vx,vy,0);
+    vx = cap(vx, vxLimit, -vxLimit);
+    vy = cap(vy, vyLimit, -vyLimit);
+    vtheta = cap(vtheta, vthetaLimit, -vthetaLimit);
+    // brain->client->Move(vx,vy,vtheta);
 
     return BT::NodeStatus::SUCCESS;
 }
@@ -188,10 +190,20 @@ BT::NodeStatus Adjust::tick()
 
 BT::NodeStatus CamTrackBall::tick()
 {
+    double pitch, yaw;
     if (!brain->data->ballDetected)
     {
-        return BT::NodeStatus::SUCCESS;
+        pitch = brain->data->ballPitchToPelvis;
+        yaw = brain->data->ballYawToPelvis;
     }
+    else
+    {
+        //追踪逻辑
+
+    }
+
+    brain->client->moveHead(pitch, yaw);
+    return NodeStatus::SUCCESS;
 
     // float fov_x = brain->_interface->ball_offset_fov(0);
     // float fov_y = brain->_interface->ball_offset_fov(1);
@@ -210,6 +222,17 @@ BT::NodeStatus CamTrackBall::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
+NodeStatus SetVelocity::tick()
+{
+    double x, y, theta;
+    vector<double> targetVec;
+    getInput("x", x);
+    getInput("y", y);
+    getInput("theta", theta);
+
+    auto res = brain->client->move(x, y, theta);
+    return NodeStatus::SUCCESS;
+}
 
 BT::NodeStatus Chase::tick()
 {
@@ -218,51 +241,57 @@ BT::NodeStatus Chase::tick()
         brain->client->Move(0,0,0);
         return BT::NodeStatus::SUCCESS; 
     }
-    double vx_chase = brain->data->ballPositionInPelvis(0);
-    double vy_chase = brain->data->ballPositionInPelvis(1);
 
-    double linearFactor = 1 / (1 + exp(3 * (data->ballRange * fabs(data->ballYawToPelvis)) - 3));
-    vx_chase *= linearFactor;
-    vy_chase *= linearFactor;
-
-    vx_chase = saturation(vx_chase, Vec2<double>(-1,1));
-    vy_chase = saturation(vy_chase, Vec2<double>(-1,1));
-
-    double vyaw_chase = data->ballYawToPelvis;
-    vyaw_chase = saturation(vyaw_chase, Vec2<double>(-1,1));
-
-    Vec2<double> vec_goal_ball_field;
-    vec_goal_ball_field(0) = 4.5 - brain->data->ballPositionInField(0);
-    vec_goal_ball_field(1) = 0 - brain->data->ballPositionInField(1);
-
-    double angle_goal_ball_field = atan2(vec_goal_ball_field(1),vec_goal_ball_field(0));
+    double dist;
+    getInput("dist", dist);
 
 
-    double deltaDir = angle_goal_ball_field - data->robotBallAngleToField;
+    double vxLimit = 1.0;
+    double vyLimit = 0.8;
+    double vthetaLimit = 1.0;
 
-    double dir = deltaDir > 0 ? -1.0 : 1.0;
 
-    double s = 0.4;
-    double r = 0.8;
+    double ballRange = brain->data->ballRange;
+    double ballYaw = brain->data->ballYawToPelvis;
 
-    double vtheta = (data->ballYawToPelvis - dir * s) / r;
+    Pose2D target_f, target_r;
+    if (brain->data->robotPoseToField.x - brain->data->ballPositionInField[0] > (_state == "chase" ? 1.0 : 0.0))
+    { // circle back
+        _state = "circle_back";
+        // 目标 x 坐标
+        target_f.x = brain->data->ballPositionInField[0] - dist;
 
-    double vx_adjust = -s * dir * sin(data->ballYawToPelvis);
-    double vy_adjust = s * dir * cos(data->ballYawToPelvis);
-    vy_adjust = saturation(vy_adjust, Vec2<double>(-1,1));
+        // 目标 y 坐标. 即决策从哪边绕, 并防止震荡
+        if (brain->data->robotPoseToField.y > brain->data->ballPositionInField[1] - _dir)
+            _dir = 1.0;
+        else
+            _dir = -1.0;
 
-    double vyaw_adjust = vtheta;
-    vyaw_adjust = saturation(vtheta, Vec2<double>(-1,1));
+        target_f.y = brain->data->ball.ballPositionInField[1] + _dir * dist;
+    }
+    else
+    { // chase
+        _state = "chase";
+        target_f.x = brain->data->ballPositionInField[0] - dist;
+        target_f.y = brain->data->ballPositionInField[1];
+    }
 
-    double d_switch = 1.5;
-    double w_chase = std::clamp(data->ballRange / d_switch, 0.0, 1.0);
-    double w_orbit = 1.0 - w_chase;
+    target_r = brain->data->field2robot(target_f);
+    double vx = target_r.x;
+    double vy = target_r.y;
+    double vtheta = ballYaw * 2.0;
 
-    double vx = w_chase * vx_chase + w_orbit * vx_adjust;
-    double vy = w_chase * vy_chase + w_orbit * vy_adjust;
-    double vyaw = w_chase * vyaw_chase + w_orbit * vyaw_adjust;
+    double linearFactor = 1 / (1 + exp(3 * (ballRange * fabs(ballYaw)) - 3));
+    vx *= linearFactor;
+    vy *= linearFactor;
 
-    // brain->_interface->locoClient.Move(vx, vy, vyaw);
+
+    vx = cap(vx, vxLimit, -vxLimit);
+    vy = cap(vy, vyLimit, -vyLimit);
+    vtheta = cap(vtheta, vthetaLimit, -vthetaLimit);
+
+    
+    // brain->client.Move(vx, vy, vtheta);
     return BT::NodeStatus::SUCCESS;
 }
 
@@ -337,138 +366,144 @@ BT::NodeStatus PrintMsg::tick()
 }
 
 
-BT::NodeStatus Kick::tick()
+BT::NodeStatus Kick::onStart()
 {
-    Vec2<double> ballPositionInField;
-    ballPositionInField(0) = brain->data->homoMatPelvisToField(0,2) + brain->data->ballPositionInPelvis(0);
-    ballPositionInField(1) = brain->data->homoMatPelvisToField(1,2) + brain->data->ballPositionInPelvis(1);
+    _startTime = brain->get_clock()->now();
 
-    Vec2<double> leftGoalField;
-    leftGoalField(0) = 4.5;
-    leftGoalField(1) = 2.6 / 2;
+    double vxLimit = 1.6;
+    double vyLimit = 0.6;
+    double vthetaLimit = 1.6;
 
-    Vec2<double> rightGoalField;
-    rightGoalField(0) = 4.5;
-    rightGoalField(1) = -2.6 / 2;
+    int minMSecKick = 1000;
 
-    double margin = 0.1;
-
-    Vec2<double> vecBallLeftGoalField;
-    vecBallLeftGoalField(0) = leftGoalField(0) - ballPositionInField(0);
-    vecBallLeftGoalField(1) = leftGoalField(1) - margin - ballPositionInField(1);
-    double angleballLeftGoalField = atan2(vecBallLeftGoalField(1),vecBallLeftGoalField(0));
-
-    Vec2<double> vecBallRightGoalField;
-    vecBallRightGoalField(0) = rightGoalField(0) - ballPositionInField(0);
-    vecBallRightGoalField(1) = rightGoalField(1) + margin - ballPositionInField(1);
-    double angleballRightGoalField = atan2(vecBallRightGoalField(1),vecBallRightGoalField(0));
-
-    Vec2<double> vecPelvisBallField;
-    vecPelvisBallField(0) = ballPositionInField(0) - brain->data->homoMatPelvisToField(0,2);
-    vecPelvisBallField(1) = ballPositionInField(1) - brain->data->homoMatPelvisToField(1,2);
-    double angleRobotBallField = atan2(vecPelvisBallField(1),vecPelvisBallField(0));
-
-    if(abs(angleRobotBallField)<abs(angleballLeftGoalField-angleballRightGoalField))
+    double adjustedYaw = brain->data->ballYawToPelvis
+    double tx = cos(adjustedYaw) * brain->data->ballRange; // 移动的目标
+    double ty = sin(adjustedYaw) * brain->data->ballRange;
+    double vx, vy;
+    if (fabs(ty) < 0.01 && fabs(adjustedYaw) < 0.01)
     {
-        std::cout<<"[node::kick] The shooting angle looks good "<<std::endl;
+        vx = vxLimit;
+        vy = 0.0;
     }
     else
-    {   
-        Vec2<double> goalField;
-        goalField(0) = 4.5;
-        goalField(1) = 0;
-
-        std::cout<<"[node::kick] The shooting angle doesn't look good "<<std::endl;
-        Vec2<double> vecBallGoalField;
-        vecBallGoalField(0) = goalField(0) - ballPositionInField(0);
-        vecBallGoalField(1) = goalField(1) - ballPositionInField(1);
-        double angleBallGoalField = atan2(vecBallGoalField(1),vecBallGoalField(0));
-
-        Vec2<double> vecPelvisBallField;
-        vecPelvisBallField(0) = ballPositionInField(0) - brain->data->homoMatPelvisToField(0,2);
-        vecPelvisBallField(1) = ballPositionInField(1) - brain->data->homoMatPelvisToField(1,2);
-        double anglePlevisBallfield = atan2(vecPelvisBallField(1),vecPelvisBallField(0));
-        double biasAngle = angleBallGoalField - anglePlevisBallfield;
-        double vx =0, vy =0, vtheta = 0;
-        double s = 0.4, r=0.8;
-        double ball_yaw =atan2(brain->data->ballPositionInPelvis(1),brain->data->ballPositionInPelvis(0));
-        vx = s*sin(ball_yaw);
-        vy = -s*cos(ball_yaw);
-        vtheta = (ball_yaw+s)/r;
-
-        // brain->_interface->locoClient.Move(vx,vy,vtheta);
+    { 
+        vy = ty > 0 ? vyLimit : -vyLimit;
+        vx = vy / ty * tx * vxFactor;
+        if (fabs(vx) > vxLimit)
+        {
+            vy *= vxLimit / vx;
+            vx = vxLimit;
+        }
     }
-    return BT::NodeStatus::SUCCESS;
-}
-
-BT::NodeStatus playerDecision::tick()
-{
-    std::string decision;
-    if(brain->data->ballPositionInField(0)> 4.6||abs(brain->data->ballPositionInField(1))>3)
-    {
-        data->goalSignal = true;
-    }
-    else
-    {
-        data->goalSignal = false;
-    }
-
-    bool enableCamFindBallNode;
-    if(!brain->data->ballDetected)
-    {
-        enableCamFindBallNode = true;
-    }
-    else 
-    {
-        enableCamFindBallNode = false;
-    }
-
-    Vec2<double> goalField;
-    goalField(0) = 4.5;
-    goalField(1) = 0;
-
-    bool enableRobotTrackFieldNode;
-    Vec2<double> vecBallGoalField;
-    vecBallGoalField(0) = goalField(0) - brain->data->ballPositionInField(0);
-    vecBallGoalField(1) = goalField(1) - brain->data->ballPositionInField(1);
-    double angleBallGoalField = atan2(vecBallGoalField(1),vecBallGoalField(0));
-
-    Vec2<double> vecPelvisBallField;
-    vecPelvisBallField(0) = brain->data->ballPositionInField(0) - brain->data->homoMatPelvisToField(0,2);
-    vecPelvisBallField(1) = brain->data->ballPositionInField(1) - brain->data->homoMatPelvisToField(1,2);
-    double anglePlevisBallfield = atan2(vecPelvisBallField(1),vecPelvisBallField(0));
-
-    double biasAngle = angleBallGoalField - anglePlevisBallfield;
-    if(data->goalSignal|| ((abs(brain->data->ballYawToPelvis)<=0.20) && (abs(brain->data->ballPositionInPelvis(0)) <= 0.55) && (abs(brain->data->ballPositionInPelvis(1)) <= 0.3)))
-    {
-        enableRobotTrackFieldNode = false;
-    }
-    else 
-    {
-        enableRobotTrackFieldNode = true;
-    }
-
-    if(enableCamFindBallNode)
-    {
-        decision = "camFindBall";
-    }
-    else if(enableRobotTrackFieldNode)
-    {
-        decision = "robotTrackField";
-    }
-    else if(!data->goalSignal)
-    {
-        decision = "kick";
-    }
-    else
-    {
-        decision = "stop";
-        // goal_wly = true;
-    }
+    double speed = norm(vx, vy);
+    _msecKick = speed > 1e-5 ? minMSecKick + static_cast<int>(brain->data->ballRange / speed * 1000) : minMSecKick;
     
-    std::cout<<"debug decision: "<<std::endl;
-    std::cout<<decision<<std::endl;
-
-    setOutput("decision", decision);
+    
+    // brain->client->setVelocity(vx, vy, 0);
     return BT::NodeStatus::SUCCESS;
 }
+
+NodeStatus Kick::onRunning()
+{
+    if (brain->msecsSince(_startTime) < _msecKick)
+        return NodeStatus::RUNNING;
+
+    // else
+    // brain->client->move(0, 0, 0);
+    return NodeStatus::SUCCESS;
+}
+
+void Kick::onHalted()
+{
+    _startTime -= rclcpp::Duration(100, 0);
+}
+
+BT::NodeStatus StrikerDecide::tick()
+{
+    string lastDecision;
+    getInput("decision_in", lastDecision);
+
+
+    double kickDir = atan2(-brain->data->ballPositionInField[1], brain->config->fieldDimensions.length / 2 - brain->data->ballPositionInField[0]);
+    double dir_rb_f = brain->data->robotBallAngleToField;
+    auto goalPostAngles = brain->getGoalPostAngles(0.3);
+    double theta_l = goalPostAngles[0]; // 球到左边门柱的角度(我们的左)
+    double theta_r = goalPostAngles[1]; // 球到右边门柱的角度
+    bool angleIsGood = (theta_l > dir_rb_f && theta_r < dir_rb_f);
+    double ballRange = brain->data->ballRange;
+    double ballYaw = brain->data->ballYawToPelvis;
+
+    string newDecision;
+    double chaseRangeThreshold;
+    getInput("chase_threshold", chaseRangeThreshold);
+
+
+    if (!brain->tree->getEntry<bool>("ball_location_known"))
+    {
+        newDecision = "find";
+    }
+    else if (ballRange > chaseRangeThreshold * (lastDecision == "chase" ? 0.9 : 1.0))
+    {
+        newDecision = "chase";
+    }
+    else if (angleIsGood)
+    {
+        newDecision = "kick";
+    }
+    else
+    {
+        newDecision = "adjust";
+    }
+
+    setOutput("decision_out", newDecision);
+
+    return NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus GoalieDecide::tick()
+{
+    string lastDecision;
+    getInput("decision_in", lastDecision);
+
+
+    double kickDir = atan2(-brain->data->ballPositionInField[1], brain->config->fieldDimensions.length / 2 - brain->data->ballPositionInField[0]);
+    double dir_rb_f = brain->data->robotBallAngleToField;
+    auto goalPostAngles = brain->getGoalPostAngles(0.3);
+    double theta_l = goalPostAngles[0]; // 球到左边门柱的角度(我们的左)
+    double theta_r = goalPostAngles[1]; // 球到右边门柱的角度
+    bool angleIsGood = (theta_l > dir_rb_f && theta_r < dir_rb_f);
+    double ballRange = brain->data->ballRange;
+    double ballYaw = brain->data->ballYawToPelvis;
+
+    string newDecision;
+    double chaseRangeThreshold;
+    getInput("chase_threshold", chaseRangeThreshold);
+
+
+    if (!brain->tree->getEntry<bool>("ball_location_known"))
+    {
+        newDecision = "find";
+    }
+    else if (brain->data->ball.posToField.x > 0 - static_cast<double>(lastDecision == "gohome"))
+    {
+        newDecision = "gohome";
+    }
+    else if (ballRange > chaseRangeThreshold * (lastDecision == "chase" ? 0.9 : 1.0))
+    {
+        newDecision = "chase";
+    }
+    else if (angleIsGood)
+    {
+        newDecision = "kick";
+    }
+    else
+    {
+        newDecision = "adjust";
+    }
+
+    setOutput("decision_out", newDecision);
+    
+    return NodeStatus::SUCCESS;
+}
+
+

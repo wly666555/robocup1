@@ -94,6 +94,7 @@ double G1Brain::msecsSince(rclcpp::Time time)
     return (this->get_clock()->now() - time).nanoseconds() / 1e6;
 }
 
+
 void G1Brain::updateMemory() {
     // 更新记忆
     updateBallMemory();
@@ -143,9 +144,41 @@ void G1Brain::updateBallMemory() {
         double y_T = data->homoMatBallToWorldAligned(1,3);
         double z_T = data->homoMatBallToWorldAligned(2,3);
         data->ball_range_selected = std::sqrt(x_T * x_T + y_T * y_T);
+        data->ballPitchToPelvis = asin(config->Height / data->ballRange);
     } 
 }
 
+vector<double> G1Brain::getGoalPostAngles(const double margin)
+{
+    double leftX, leftY, rightX, rightY; // 球门柱在球场中的坐标
+
+    leftX = config->fieldDimensions.length / 2;
+    leftY = config->fieldDimensions.goalWidth / 2;
+    rightX = config->fieldDimensions.length / 2;
+    rightY = -config->fieldDimensions.goalWidth / 2;
+
+    // 如果看到了对方球门, 则使用看到的位置, 可以抵消 odom 的误差
+    for (int i = 0; i < data->goalposts.size(); i++)
+    {
+        auto post = data->goalposts[i];
+        if (post.info == "oppo-left")
+        {
+            leftX = post.posToField.x;
+            leftY = post.posToField.y;
+        }
+        else if (post.info == "oppo-right")
+        {
+            rightX = post.posToField.x;
+            rightY = post.posToField.y;
+        }
+    }
+
+    const double theta_l = atan2(leftY - margin - data->ballPositionInField[1], leftX - data->ballPositionInField[0]);
+    const double theta_r = atan2(rightY + margin - data->ballPositionInField[1], rightX - data->ballPositionInField[0]);
+
+    vector<double> vec = {theta_l, theta_r};
+    return vec;
+}
 
 void G1Brain::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     last_odom_ = *msg;
