@@ -26,7 +26,7 @@ find_package(unitree_go REQUIRED)
 
 
 
-add_executable(g1_brain 
+add_executable(g1_brain_node 
     src/main.cpp 
     src/brain.cpp 
     src/locator.cpp 
@@ -37,7 +37,7 @@ add_executable(g1_brain
     src/pose.cpp
 )
 
-target_include_directories(g1_brain
+target_include_directories(g1_brain_node
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OpenCV_INCLUDE_DIRS}
@@ -53,7 +53,7 @@ target_include_directories(g1_brain
 link_directories(${CMAKE_SOURCE_DIR}/../roboCup_sdk/lib/x86_64)
 link_directories(${CMAKE_SOURCE_DIR}/../roboCup_sdk/lib/aarch64)
 
-ament_target_dependencies(g1_brain
+ament_target_dependencies(g1_brain_node
   rclcpp
   robot_interfaces
   nav_msgs
@@ -71,7 +71,7 @@ ament_target_dependencies(g1_brain
 
 
 
-target_link_libraries(g1_brain
+target_link_libraries(g1_brain_node
   /opt/ros/foxy/lib/libbehaviortree_cpp_v3.so
   unitree_sdk2
   rt
@@ -81,7 +81,7 @@ target_link_libraries(g1_brain
 )
 
 install(TARGETS
-  g1_brain
+  g1_brain_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -38,7 +38,7 @@ void BrainTree::init()
 
 void BrainTree::initEntry()
 {
-    // setEntry<std::string>("player_role", brain->config->playerRole);
+    setEntry<std::string>("player_role", brain->config->playerRole);
     setEntry<bool>("ball_location_known", false);
     
     setEntry<bool>("track_ball", true);
@@ -105,7 +105,7 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = -M_PI / 4;
         thetaMax = M_PI / 4;
     }
-    else if (mode ==  "center" || (brain->config->location_mode ==  "normal" && !"odom_calibrated"))
+    else if (mode ==  "center" || (mode ==  "normal" && !"odom_calibrated"))
     {
         xMin = -brain->config->fieldDimensions.length / 2;
         xMax = brain->config->fieldDimensions.length / 2;
@@ -127,7 +127,7 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = brain->data->robotPoseToField.theta - M_PI / 4;
         thetaMax = brain->data->robotPoseToField.theta + M_PI / 4;
     } else {
-        std::cout << "[ERROR]: Unsupported mode, " << brain->config->location_mode << std::endl;
+        std::cout << "[ERROR]: Unsupported mode, " << mode << std::endl;
         return BT::NodeStatus::SUCCESS;
     }
 

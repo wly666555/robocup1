@@ -24,7 +24,6 @@ class BrainConfig
 public:
 
     string fieldType; // 球场类型
-    string location_mode;
     string playerStartPos;
     string playerRole; 
 

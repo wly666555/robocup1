@@ -1,11 +1,10 @@
 #include "brain.h"
 
 
-G1Brain::G1Brain() : Node("g1_brain") {
+G1Brain::G1Brain() : Node("g1_brain_node") {
     RCLCPP_INFO(this->get_logger(), "G1Brain node created");
     declare_parameter<std::string>("game.field_type", "");
     declare_parameter<std::string>("game.playerStartPos", "left");
-    declare_parameter<std::string>("game.location_mode", "normal");
 
     declare_parameter<double>("robot.height", 1.3);
     declare_parameter<double>("robot.scale_factor", 1.4);
@@ -72,8 +71,8 @@ void G1Brain::tick() {
 
 void G1Brain::loadConfig() {
     get_parameter("game.field_type", config->fieldType);
-    get_parameter("game.location_mode", config->location_mode);
     get_parameter("game.playerStartPos", config->playerStartPos);
+    get_parameter("game.player_role", config->playerRole);
     get_parameter("robot.height", config->height);
     get_parameter("robot.scale_factor", config->scale_factor);
     get_parameter("robot.pitch_compensation", config->pitch_compensation);
