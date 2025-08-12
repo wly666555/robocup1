@@ -203,7 +203,7 @@ private:
 class SetVelocity : public SyncActionNode
 {
 public:
-    SetVelocity(const string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    SetVelocity(const string &name, const NodeConfiguration &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     NodeStatus tick() override;
     static PortsList providedPorts()
@@ -241,7 +241,7 @@ private:
 class GoalieDecide : public SyncActionNode
 {
 public:
-    GoalieDecide(const std::string &name, const NodeConfig &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    GoalieDecide(const std::string &name, const NodeConfiguration &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {

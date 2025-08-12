@@ -12,6 +12,7 @@ G1Brain::G1Brain() : Node("g1_brain_node") {
     declare_parameter<double>("robot.yaw_compensation", 0.0);
 
     declare_parameter<double>("memory.ball_memory_length", 5.0);
+    
 }
 
 void G1Brain::init() {
@@ -78,6 +79,7 @@ void G1Brain::loadConfig() {
     get_parameter("robot.pitch_compensation", config->pitch_compensation);
     get_parameter("robot.yaw_compensation", config->yaw_compensation);
     get_parameter("memory.ball_memory_length", config->ball_memory_length);
+    get_parameter("tree_file_path", config->treeFilePath);
 
     odometry_factor_ = config->scale_factor;
     servo_pitch_compensation_ = config->pitch_compensation;

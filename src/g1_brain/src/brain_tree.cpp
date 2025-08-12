@@ -30,7 +30,7 @@ void BrainTree::init()
     
 
     factory.registerBehaviorTreeFromFile(this->brain->config->treeFilePath);
-    tree = factory.createTree("CamFindAndTrackBall");
+    tree = factory.createTree("MainTree");
     
     //init blackboard entry
     initEntry();
@@ -267,7 +267,7 @@ BT::NodeStatus Chase::tick()
         else
             _dir = -1.0;
 
-        target_f.y = brain->data->ball.ballPositionInField[1] + _dir * dist;
+        target_f.y = brain->data->ballPositionInField[1] + _dir * dist;
     }
     else
     { // chase
@@ -484,7 +484,7 @@ BT::NodeStatus GoalieDecide::tick()
     {
         newDecision = "find";
     }
-    else if (brain->data->ball.posToField.x > 0 - static_cast<double>(lastDecision == "gohome"))
+    else if (brain->data->ballPositionInField[0] > 0 - static_cast<double>(lastDecision == "gohome"))
     {
         newDecision = "gohome";
     }
