@@ -5,4 +5,4 @@ cd ..
 
 source ./install/setup.bash
 
-ros2 launch brain launch.py
+ros2 launch brain launch.py "$@" > brain.log 2>&1 &
