@@ -1,0 +1,17 @@
+<root BTCPP_format="4">
+    <include path="./subtrees/subtree_cam_find_and_track_ball.xml" />
+    <include path="./subtrees/subtree_striker_play.xml" />
+    <include path="./subtrees/subtree_goal_keeper_play.xml" />
+
+    <BehaviorTree ID="MainTree">
+        <Sequence name="root">
+            <ReactiveSequence >
+                <CamFindBall  _while="!odom_calibrated"/>
+                <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
+                <SelfLocate mode="enter_field" />
+                <SubTree ID="StrikerPlay" _autoremap="true" _while="player_role == 'striker'" />
+                <SubTree ID="GoalKeeperPlay" _autoremap="true" _while="player_role == 'goal_keeper'" />
+            </ReactiveSequence>
+        </Sequence>
+    </BehaviorTree>
+</root>

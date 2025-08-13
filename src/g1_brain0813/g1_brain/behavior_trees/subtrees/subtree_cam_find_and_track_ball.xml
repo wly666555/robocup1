@@ -1,0 +1,16 @@
+<root BTCPP_format="4" >
+  <BehaviorTree ID="CamFindAndTrackBall">
+     <Sequence name="root">
+         <IfThenElse>
+             <ScriptCondition        name="Do we known the location of the ball?" code="ball_location_known" />
+             <!-- 此处ball_detected变量用于标志球是否被看见，具体变量名可能需要更改 -->
+             <Sequence               name="[Yes] -> track the ball" >
+                <CamTrackBall/>
+             </Sequence>
+             <Sequence               name="[No] -> find the ball">
+                <CamFindBall/>
+             </Sequence>
+         </IfThenElse>
+     </Sequence>
+  </BehaviorTree>
+</root>
