@@ -1,10 +1,12 @@
 #include "brain.h"
 
-
+using namespace std;
 G1Brain::G1Brain() : Node("g1_brain_node") {
     RCLCPP_INFO(this->get_logger(), "G1Brain node created");
+
     declare_parameter<std::string>("game.field_type", "");
-    declare_parameter<std::string>("game.playerStartPos", "left");
+    declare_parameter<std::string>("game.playerStartPos", "");
+    declare_parameter<std::string>("game.player_role", "");
 
     declare_parameter<double>("robot.height", 1.3);
     declare_parameter<double>("robot.scale_factor", 1.4);
@@ -16,6 +18,7 @@ G1Brain::G1Brain() : Node("g1_brain_node") {
     declare_parameter<double>("robot.pitch_limit_max", 85.0);
 
     declare_parameter<double>("memory.ball_memory_length", 5.0);
+    declare_parameter<string>("tree_file_path", "");
 
 
 }
@@ -27,7 +30,6 @@ void G1Brain::init() {
     data = std::make_shared<BrainData>();
     locator = std::make_shared<Locator>();
 
-    // tree = std::make_shared<BrainTree>(this);
     client = std::make_shared<RobotClient>(this);
 
     // 初始化粒子滤波定位器
@@ -71,20 +73,25 @@ void G1Brain::tick() {
 
 
 void G1Brain::loadConfig() {
-    get_parameter("game.field_type", config->fieldType);
-    get_parameter("game.playerStartPos", config->playerStartPos);
-    get_parameter("game.player_role", config->playerRole);
-    get_parameter("robot.height", config->height);
-    get_parameter("robot.scale_factor", config->scale_factor);
-    get_parameter("robot.pitch_compensation", config->pitch_compensation);
-    get_parameter("robot.yaw_compensation", config->yaw_compensation);
-    get_parameter("robot.yaw_limit_min", config->yaw_limit_min);
-    get_parameter("robot.yaw_limit_max", config->yaw_limit_max);
-    get_parameter("robot.pitch_limit_min", config->pitch_limit_min);
-    get_parameter("robot.pitch_limit_max", config->pitch_limit_max);
-    get_parameter("memory.ball_memory_length", config->ball_memory_length);
-    get_parameter("tree_file_path", config->treeFilePath);
+    get_parameter("g1_brain_node.game.field_type", config->fieldType);
+    get_parameter("g1_brain_node.game.playerStartPos", config->playerStartPos);
+    get_parameter("g1_brain_node.game.player_role", config->playerRole);
+    get_parameter("g1_brain_node.robot.height", config->height);
+    get_parameter("g1_brain_node.robot.scale_factor", config->scale_factor);
+    get_parameter("g1_brain_node.robot.pitch_compensation", config->pitch_compensation);
+    get_parameter("g1_brain_node.robot.yaw_compensation", config->yaw_compensation);
+    get_parameter("g1_brain_node.robot.yaw_limit_min", config->yaw_limit_min);
+    get_parameter("g1_brain_node.robot.yaw_limit_max", config->yaw_limit_max);
+    get_parameter("g1_brain_node.robot.pitch_limit_min", config->pitch_limit_min);
+    get_parameter("g1_brain_node.robot.pitch_limit_max", config->pitch_limit_max);
+    get_parameter("g1_brain_node.memory.ball_memory_length", config->ball_memory_length);
+    get_parameter("g1_brain_node.tree_file_path", config->treeFilePath);
 
+
+    RCLCPP_INFO(this->get_logger(), "height: %f",config->height);
+    RCLCPP_INFO(this->get_logger(), "field_type: %s",config->fieldType.c_str());
+
+    
     odometry_factor_ = config->scale_factor;
     servo_pitch_compensation_ = config->pitch_compensation;
     servo_yaw_compensation_ = config->yaw_compensation;

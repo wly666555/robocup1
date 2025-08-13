@@ -22,6 +22,7 @@
   <depend>yaml-cpp_vendor</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
+  <depend>behaviortree_cpp</depend>
 
 
   <test_depend>ament_lint_auto</test_depend>

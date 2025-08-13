@@ -10,8 +10,8 @@ from launch.substitutions import LaunchConfiguration
 def handle_configuration(context, *args, **kwargs):
 
     config_path = os.path.join(os.path.dirname(__file__), '../config')
-    config_file = os.path.join(config_path, 'g1_brain_config.yaml') 
-    config_local_file = os.path.join(config_path, 'g1_brain_config_local.yaml') 
+    config_file = os.path.join(config_path, 'brain.yaml') 
+    # config_local_file = os.path.join(config_path, 'brain_local.yaml') 
     
 
     behavior_trees_dir = os.path.join(os.path.dirname(__file__), '../behavior_trees')
@@ -24,8 +24,8 @@ def handle_configuration(context, *args, **kwargs):
 
     # 这里的 config 覆盖 config_file 中相同字段(如有) 用于在 launch 时快速指定参数, 而不需要频繁修改 config.yaml
     config = {
-            # 加载哪个行为树文件
-            "tree_file_path": tree_path,
+        # 加载哪个行为树文件
+        "tree_file_path": tree_path,
     }
     start_pos = context.perform_substitution(LaunchConfiguration('pos'))
     if not start_pos == '':
@@ -33,7 +33,8 @@ def handle_configuration(context, *args, **kwargs):
     role = context.perform_substitution(LaunchConfiguration('role'))
     if not role == '':
         config['game.player_role'] = role
-
+    print(f"Config file path: {config_file}")
+    print(f"Config dict: {config}")
     return [
         Node(
             package ='g1_brain',
@@ -42,7 +43,7 @@ def handle_configuration(context, *args, **kwargs):
             output='screen',
             parameters=[
                 config_file,
-                config_local_file,
+                # config_local_file,
                 config
             ]
         )
@@ -58,12 +59,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'pos', 
-            default_value='left',
+            default_value='',
             description='如果需要覆盖 config.yaml 中的 game.player_start_pos, 可以在 launch 时指定参数 pos:=left'
         ),
         DeclareLaunchArgument(
             'role', 
-            default_value='striker',
+            default_value='',
             description='如果需要覆盖 config.yaml 中的 game.player_role, 可以在 launch 时指定参数 role:=striker'
         ),
         OpaqueFunction(function=handle_configuration) # 转到 handle_configuration 中继续处理

@@ -6,8 +6,9 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <behaviortree_cpp_v3/bt_factory.h>
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/behavior_tree.h>
+#include <behaviortree_cpp/bt_factory.h>
+#include <behaviortree_cpp/action_node.h>
 #include <Eigen/Dense> // <--- 加上这个
 #include <stdint.h>
 #include "brain.h"
@@ -93,7 +94,7 @@ private:
 // =================== 行为树节点类 ===================
 class SelfLocate : public BT::SyncActionNode {
 public:
-    SelfLocate(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    SelfLocate(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
     
     BT::NodeStatus tick() override;
     
@@ -115,7 +116,7 @@ private:
 
 class Adjust : public BT::SyncActionNode {
 public:
-    Adjust(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    Adjust(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -125,7 +126,7 @@ private:
 
 class CamFindBall : public SyncActionNode {
 public:
-    CamFindBall(const std::string& name, const NodeConfiguration& config, G1Brain* brain);
+    CamFindBall(const std::string& name, const NodeConfig& config, G1Brain* brain);
  
     NodeStatus tick() override;
  
@@ -140,7 +141,7 @@ private:
 
 class CamTrackBall : public BT::SyncActionNode {
 public:
-    CamTrackBall(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    CamTrackBall(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -150,7 +151,7 @@ private:
 
 class Chase : public BT::SyncActionNode {
 public:
-    Chase(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    Chase(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static PortsList providedPorts()
     {
@@ -169,7 +170,7 @@ private:
 
 class Kick : public StatefulActionNode {
 public:
-    Kick(const string &name, const NodeConfiguration &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
+    Kick(const string &name, const NodeConfig &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
 
     NodeStatus onStart() override;
 
@@ -185,7 +186,7 @@ private:
 
 class PrintMsg : public BT::SyncActionNode {
 public:
-    PrintMsg(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    PrintMsg(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -204,7 +205,7 @@ private:
 class SetVelocity : public SyncActionNode
 {
 public:
-    SetVelocity(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    SetVelocity(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     NodeStatus tick() override;
     static PortsList providedPorts()
@@ -223,7 +224,7 @@ private:
 class StrikerDecide : public BT::SyncActionNode
 {
 public:
-    StrikerDecide(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    StrikerDecide(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -242,7 +243,7 @@ private:
 class GoalieDecide : public SyncActionNode
 {
 public:
-    GoalieDecide(const std::string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    GoalieDecide(const std::string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -260,9 +261,9 @@ private:
     G1Brain *brain;
 };
 
-class BackToPosition : public BT::SyncActionNode{
+class MoveToPoseOnField : public BT::SyncActionNode{
 public:
-    BackToPosition(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    MoveToPoseOnField(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     BT::NodeStatus tick() override;
 
@@ -272,7 +273,7 @@ private:
 
 class Rotate : public BT::StatefulActionNode{
 public:
-    Rotate(const string &name, const NodeConfiguration &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
+    Rotate(const string &name, const NodeConfig &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
     
     BT::NodeStatus onStart() override;
     BT::NodeStatus onRunning() override;

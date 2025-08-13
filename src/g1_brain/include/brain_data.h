@@ -20,7 +20,6 @@ class BrainData
 public:
 
     rclcpp::Time lastSuccessfulLocalizeTime;
-    Locator locator;
     // Robot position & velocity commands
     Pose2D robotPoseToOdom;         // 机器人在 Odom 坐标系中的 Pose, 通过 odomCallback 更新数据
     Pose2D odomToField;             // Odom 坐标系原点在 Field 坐标系中的位置和方向.  可通过已知位置进行校准, 例如上场时根据上场点校准

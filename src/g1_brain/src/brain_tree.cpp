@@ -11,7 +11,7 @@
 #define REGISTER_BUILDER(Name)     \
     factory.registerBuilder<Name>( \
         #Name,                     \
-        [this](const string &name, const NodeConfiguration &config) { return make_unique<Name>(name, config, brain); });
+        [this](const string &name, const NodeConfig &config) { return make_unique<Name>(name, config, brain); });
 
 
 void BrainTree::init()
@@ -28,11 +28,11 @@ void BrainTree::init()
     REGISTER_BUILDER(SelfLocate)
     REGISTER_BUILDER(SetVelocity)
     REGISTER_BUILDER(Rotate)
-    REGISTER_BUILDER(BackToPosition)
+    REGISTER_BUILDER(MoveToPoseOnField)
     
-    RCLCPP_INFO(brain->get_logger(), "Tree file path: %s", brain->config->treeFilePath.c_str());
-    factory.registerBehaviorTreeFromFile(brain->config->treeFilePath);
 
+    factory.registerBehaviorTreeFromFile(brain->config->treeFilePath);
+    
     tree = factory.createTree("MainTree");
     
     //init blackboard entry
@@ -54,8 +54,8 @@ void BrainTree::initEntry()
 
 void BrainTree::tick()
 {
-    tree.tickRoot();
-    RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "tree.tickRoot();");
+    tree.tickOnce();
+    RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "tree.tickOnce();");
 }
 
 // =================== 节点实现 ===================
@@ -294,7 +294,7 @@ BT::NodeStatus Chase::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
-CamFindBall::CamFindBall(const std::string& name, const NodeConfiguration& config, G1Brain* _brain)
+CamFindBall::CamFindBall(const std::string& name, const NodeConfig& config, G1Brain* _brain)
     : SyncActionNode(name, config), brain(_brain)
 {
     // 初始化预定义动作
@@ -503,7 +503,7 @@ BT::NodeStatus GoalieDecide::tick()
     return NodeStatus::SUCCESS;
 }
 
-BT::NodeStatus BackToPosition::tick()
+BT::NodeStatus MoveToPoseOnField::tick()
 {
     Pose2D field_position;
     field_position.x = 0;
