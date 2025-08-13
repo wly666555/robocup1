@@ -76,19 +76,19 @@ void G1Brain::tick() {
 
 
 void G1Brain::loadConfig() {
-    get_parameter("game.field_type", config->fieldType);
-    get_parameter("game.playerStartPos", config->playerStartPos);
-    get_parameter("game.player_role", config->playerRole);
-    get_parameter("robot.height", config->height);
-    get_parameter("robot.scale_factor", config->scale_factor);
-    get_parameter("robot.pitch_compensation", config->pitch_compensation);
-    get_parameter("robot.yaw_compensation", config->yaw_compensation);
-    get_parameter("robot.yaw_limit_min", config->yaw_limit_min);
-    get_parameter("robot.yaw_limit_max", config->yaw_limit_max);
-    get_parameter("robot.pitch_limit_min", config->pitch_limit_min);
-    get_parameter("robot.pitch_limit_max", config->pitch_limit_max);
-    get_parameter("memory.ball_memory_length", config->ball_memory_length);
-    get_parameter("tree_file_path", config->treeFilePath);
+    this->get_parameter("game.field_type", config->fieldType);
+    this->get_parameter("game.playerStartPos", config->playerStartPos);
+    this->get_parameter("game.player_role", config->playerRole);
+    this->get_parameter("robot.height", config->height);
+    this->get_parameter("robot.scale_factor", config->scale_factor);
+    this->get_parameter("robot.pitch_compensation", config->pitch_compensation);
+    this->get_parameter("robot.yaw_compensation", config->yaw_compensation);
+    this->get_parameter("robot.yaw_limit_min", config->yaw_limit_min);
+    this->get_parameter("robot.yaw_limit_max", config->yaw_limit_max);
+    this->get_parameter("robot.pitch_limit_min", config->pitch_limit_min);
+    this->get_parameter("robot.pitch_limit_max", config->pitch_limit_max);
+    this->get_parameter("memory.ball_memory_length", config->ball_memory_length);
+    this->get_parameter("tree_file_path", config->treeFilePath);
 
 
     RCLCPP_INFO(this->get_logger(), "height: %f",config->height);
