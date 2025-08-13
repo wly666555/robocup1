@@ -58,12 +58,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'pos', 
-            default_value='',
+            default_value='left',
             description='如果需要覆盖 config.yaml 中的 game.player_start_pos, 可以在 launch 时指定参数 pos:=left'
         ),
         DeclareLaunchArgument(
             'role', 
-            default_value='',
+            default_value='striker',
             description='如果需要覆盖 config.yaml 中的 game.player_role, 可以在 launch 时指定参数 role:=striker'
         ),
         OpaqueFunction(function=handle_configuration) # 转到 handle_configuration 中继续处理

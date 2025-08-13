@@ -15,7 +15,6 @@
   <depend>robot_interfaces</depend>
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>unitree_go</depend>
   <depend>eigen3_cmake_module</depend>
   <depend>Eigen3</depend>
   <depend>opencv2</depend>

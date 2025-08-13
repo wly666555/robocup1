@@ -12,10 +12,9 @@
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   
-  <!-- 必须的依赖项 -->
-  <depend>builtin_interfaces</depend>  <!-- 用于 Time 类型 -->
+  <!-- Dependencies for message types used in your interfaces -->
+  <depend>builtin_interfaces</depend>
   <depend>std_msgs</depend>
-
   
   <member_of_group>rosidl_interface_packages</member_of_group>
 

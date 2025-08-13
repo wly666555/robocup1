@@ -39,15 +39,6 @@ public:
     bool ballDetected = false;
     GameObject ball;
     double robotBallAngleToField;       // 机器人到球的向量, 在球场坐标系中与 X 轴的夹角, (-PI,PI]
-    //goal
-    bool goalSignal;
-
-    Vec2<double> ballPositionInPelvis;
-    double ballYawToPelvis;
-    double ballPitchToPelvis;
-    Vec2<double> ballPositionInField;   //球在场地位置
-    double ballRange;                   // 物体距离机器人中心在物体场平面上的投影点的直线距离
-
 
     // 场上其它对象
     std::vector<GameObject> opponents;
@@ -57,7 +48,6 @@ public:
 
 
     RotMat<double> rotMatPelvisToGlobal, rotMatGlobalToPelvis;
-    double ball_range_selected;
 
     HomoMat2<double> homoMatPelvisToField; 
     HomoMat<double> homoMatPelvisToWorldAligned;
@@ -73,8 +63,8 @@ public:
 
     Vec3<double> computeBallPosition(const RotMat<double>& rotMatPelvisToGlobal,
                                     double waist_yaw_q,
-                                    double servo0_q,
-                                    double servo1_q,
+                                    double headYaw,
+                                    double headPitch,
                                     const Vec3<double>& ball_position_in_cam);
 
     vector<FieldMarker> getMarkers();   

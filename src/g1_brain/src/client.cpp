@@ -9,9 +9,10 @@
 void RobotClient::init() 
 {
     req_puber_ = brain->create_publisher<unitree_api::msg::Request>("/api/sport/request", 10);
+    cmd_puber_ = brain->create_publisher<robot_interfaces::msg::MotorCmds>("/servo/motor_cmd", 10);
 }
 
-void RobotClient::moveHead(double yaw, double pitch) {
+void RobotClient::moveHead(double pitch, double yaw) {
     RCLCPP_DEBUG(node_->get_logger(), "Move head: yaw=%.2f, pitch=%.2f", yaw, pitch);
 
     robot_interfaces::msg::MotorCmds motor_cmds;
@@ -19,6 +20,16 @@ void RobotClient::moveHead(double yaw, double pitch) {
     motor_cmds.states.resize(2);
 
     // 假设通道 0 为 yaw，通道 1 为 pitch（根据你的伺服映射调整）
+    robot_interfaces::msg::MotorState cmd_pitch;
+    cmd_pitch.mode = 1;
+    cmd_pitch.q = static_cast<float>(pitch);
+    cmd_pitch.dq = 0.0f;
+    cmd_pitch.ddq = 0.0f;
+    // 用 kp/kd 在 MotorState 中无字段，若需要增益请在驱动侧或拓展消息定义
+    cmd_pitch.tau_est = 0.0f;
+    cmd_pitch.temperature = 0;
+    cmd_pitch.lost = 0;
+
     robot_interfaces::msg::MotorState cmd_yaw;
     cmd_yaw.mode = 1;
     cmd_yaw.q = static_cast<float>(yaw);
@@ -29,13 +40,10 @@ void RobotClient::moveHead(double yaw, double pitch) {
     cmd_yaw.temperature = 0;
     cmd_yaw.lost = 0;
 
-    robot_interfaces::msg::MotorState cmd_pitch = cmd_yaw;
-    cmd_pitch.q = static_cast<float>(pitch);
-
     motor_cmds.states[0] = cmd_yaw;
     motor_cmds.states[1] = cmd_pitch;
 
-    motor_cmd_pub_->publish(motor_cmds);
+    cmd_puber_->publish(motor_cmds);
 }
 
 void RobotClient::StandUp() {

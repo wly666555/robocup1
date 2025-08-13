@@ -29,9 +29,7 @@ public:
 
 private:
 
-    rclcpp::Publisher<robot_interfaces::msg::MotorCmds>::SharedPtr motor_cmd_pub_;
-    rclcpp::Subscription<robot_interfaces::msg::MotorStates>::SharedPtr motor_states_sub_;
-
+    rclcpp::Publisher<robot_interfaces::msg::MotorCmds>::SharedPtr cmd_puber_;
     
     rclcpp::Publisher<unitree_api::msg::Request>::SharedPtr req_puber_;
     rclcpp::Subscription<unitree_api::msg::Response>::SharedPtr req_suber_;

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 
-
 #include "locator.h"
 #include "locate/math_utils.h"
 #include "locate/types.h"

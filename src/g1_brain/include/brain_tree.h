@@ -130,10 +130,11 @@ public:
     NodeStatus tick() override;
  
 private:
-    using Vec2f = Eigen::Vector2f;
-    MultiStageInterpolator interpolator_;
-    std::vector<std::pair<Vec2f, float>> predefinedPhases_;
-    bool firstRun_ = true;
+    double _cmdSequence[6][2];    // The sequence of actions for finding the ball, in which the robot looks towards these positions in order.
+    rclcpp::Time _timeLastCmd;    // The time of the last command execution, used to ensure there is a time interval between commands.
+    int _cmdIndex;                // The current step in the cmdSequence that is being executed.
+    long _cmdIntervalMSec;        // The time interval (in milliseconds) between executing actions in the sequence.
+    long _cmdRestartIntervalMSec; // If the time since the last execution exceeds this value, the sequence will restart from step 0.
     G1Brain* brain;
 };
 
@@ -168,7 +169,7 @@ private:
 
 class Kick : public StatefulActionNode {
 public:
-    Kick(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    Kick(const string &name, const NodeConfiguration &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
 
     NodeStatus onStart() override;
 
@@ -203,7 +204,7 @@ private:
 class SetVelocity : public SyncActionNode
 {
 public:
-    SetVelocity(const string &name, const NodeConfiguration &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    SetVelocity(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     NodeStatus tick() override;
     static PortsList providedPorts()
@@ -216,13 +217,13 @@ public:
     }
 
 private:
-    Brain *brain;
+    G1Brain *brain;
 };
 // =================== playerDecision 节点 ===================
 class StrikerDecide : public BT::SyncActionNode
 {
 public:
-    playerDecision(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    StrikerDecide(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -241,7 +242,7 @@ private:
 class GoalieDecide : public SyncActionNode
 {
 public:
-    GoalieDecide(const std::string &name, const NodeConfiguration &config, Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+    GoalieDecide(const std::string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
     static BT::PortsList providedPorts()
     {
@@ -256,5 +257,28 @@ public:
     BT::NodeStatus tick() override;
 
 private:
-    Brain *brain;
+    G1Brain *brain;
+};
+
+class BackToPosition : public BT::SyncActionNode{
+public:
+    BackToPosition(const string &name, const NodeConfiguration &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
+
+    BT::NodeStatus tick() override;
+
+private:
+    G1Brain *brain;
+};
+
+class Rotate : public BT::StatefulActionNode{
+public:
+    Rotate(const string &name, const NodeConfiguration &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
+    
+    BT::NodeStatus onStart() override;
+    BT::NodeStatus onRunning() override;
+    void onHalted() override;
+
+private:
+    G1Brain *brain;
+    double turn_dir;
 };

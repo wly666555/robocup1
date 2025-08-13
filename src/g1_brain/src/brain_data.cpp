@@ -35,7 +35,7 @@ std::vector<FieldMarker> BrainData::getMarkers()
 
 
 Vec3<double> BrainData::computeBallPosition(
-    const RotMat<double>& rotMatPelvisToGlobal,double waist_yaw_q,double servo0_q,double servo1_q,const Vec3<double>& ball_position_in_cam)
+    const RotMat<double>& rotMatPelvisToGlobal,double waist_yaw_q,double headYaw,double headPitch,const Vec3<double>& ball_position_in_cam)
 {
     // 从IMU四元数获取旋转矩阵(如果未传入)
     RotMat<double> actualRotMat = rotMatPelvisToGlobal;
@@ -58,10 +58,10 @@ Vec3<double> BrainData::computeBallPosition(
     // 3）头舵机到torso，连接搭建，通常这个固定
     homoMatHeadServoToTorso = homoMatrix(Vec3<double>(0.0039635, 0.0, -0.047), RotMat<double>::Identity());
     // 4）Xl330舵机到head servo（脖子旋转+mechanical偏置），连乘pitch/yaw
-    rotMatXl330ToHeadServo = roty(0.039968) * rotz(servo0_q);
+    rotMatXl330ToHeadServo = roty(0.039968) * rotz(headYaw);
     homoMatXl330ToHeadServo = homoMatrix(Vec3<double>(0.030518, 0.0, 0.52486), rotMatXl330ToHeadServo);
     // 5）D455摄像头到Xl330舵机，考虑摄像头上下转动舵机角
-    homoMatD455ToXl330 = homoMatrix(Vec3<double>(0.0295, 0.0, 0.013), roty(servo1_q));
+    homoMatD455ToXl330 = homoMatrix(Vec3<double>(0.0295, 0.0, 0.013), roty(headPitch));
     // 6）相机内部，连接自身与外层结构体
     rotMatCamToD455 = roty(0.6981) * roty(1.5707) * rotz(-1.5707);
     homoMatCamToD455 = homoMatrix(Vec3<double>(0.04061, 0.01000, -0.02207), rotMatCamToD455);

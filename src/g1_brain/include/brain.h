@@ -68,12 +68,6 @@ public:
     double msecsSince(rclcpp::Time time);
 
 
-
-    void publishMotorCmds() {
-        motor_cmd_pub_->publish(motor_cmds);}
-    const robot_interfaces::msg::MotorStates& getMotorStates() const { return motor_states; }
-    robot_interfaces::msg::MotorCmds& getMotorCmds() { return motor_cmds; }
-
     Pose p_eye2base;
     
 private:
@@ -96,14 +90,10 @@ private:
     
     //---- 回调函数----//
 
-    // 处理舵机消息
-    void servoStatesCallback(const robot_interfaces::msg::MotorStates::SharedPtr msg);
-    // 处理视觉识别消息
-    void detectionsCallback(const robot_interfaces::msg::DetectionResults::SharedPtr msg);
-    // 处理里程计消息
-    void odomCallback(const nav_msgs::msg::Odometry &msg);
-    //处理底层状态信息
-    void lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr msg);
+    void servoStatesCallback(const std::shared_ptr<robot_interfaces::msg::MotorStates> msg);
+    void detectionsCallback(const std::shared_ptr<robot_interfaces::msg::DetectionResults> msg);
+    void odomCallback(const std::shared_ptr<nav_msgs::msg::Odometry> msg);
+    void lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowState> msg);
     
 
     // 检测处理
@@ -136,7 +126,7 @@ private:
 
     // 发布者
     rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pose_pub_;
-    rclcpp::Publisher<robot_interfaces::msg::MotorCmds>::SharedPtr motor_cmd_pub_;
+
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     rclcpp::TimerBase::SharedPtr timer_;   

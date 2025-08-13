@@ -13,6 +13,7 @@ find_package(std_msgs REQUIRED)
 set(msg_files
   "msg/DetectionResult.msg"
   "msg/DetectionResults.msg"
+  "msg/MotorCmds.msg" 
   "msg/MotorCmd.msg"         # 新增 MotorCmd.msg
   "msg/MotorStates.msg"      # 修改后的 MotorStates.msg
   "msg/MotorState.msg"       # 基础消息类型

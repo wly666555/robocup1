@@ -35,6 +35,11 @@ public:
     double height;
     double scale_factor;
 
+    // Head servo soft limits (degrees)
+    double yaw_limit_min;
+    double yaw_limit_max;
+    double pitch_limit_min;
+    double pitch_limit_max;
 
     std::string treeFilePath;
 
@@ -42,6 +47,13 @@ public:
     double vxLimit = 2.0;
     double vyLimit = 2.0;
     double vthetaLimit = 2.0;
+
+
+    //camera param
+    double camPixX = 640;
+    double camPixY = 480;
+    double camAngleX = deg2rad(86);
+    double camAngleY = deg2rad(57);
     
     // 记忆相关参数
     double ball_memory_length= 3.0;  // 球位置记忆时间（秒）

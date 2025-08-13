@@ -10,7 +10,7 @@
 #include <limits>
 #include <cmath>
 #include <chrono>
-
+#include "locate/misc.h"
 #include "robot_interfaces/msg/motor_cmd.hpp"
 #include "robot_interfaces/msg/motor_states.hpp"
 #include "robot_interfaces/msg/detection_result.hpp"

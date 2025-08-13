@@ -22,7 +22,6 @@ find_package(Eigen3 REQUIRED)
 find_package(unitree_api REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(unitree_go REQUIRED)
 
 
 
@@ -66,7 +65,6 @@ ament_target_dependencies(g1_brain_node
   sensor_msgs
   OpenCV
   yaml-cpp
-  unitree_go
 )
 
 
