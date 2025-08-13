@@ -181,16 +181,15 @@ vector<double> G1Brain::getGoalPostAngles(const double margin)
     return vec;
 }
 
-void G1Brain::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    last_odom_ = *msg;
+void G1Brain::odomCallback(const nav_msgs::msg::Odometry &msg) {
 
-    data->robotPoseToOdom.x = last_odom_.pose.pose.position.x * odometry_factor_;
-    data->robotPoseToOdom.y = last_odom_.pose.pose.position.y * odometry_factor_;
+    data->robotPoseToOdom.x = msg.pose.pose.position.x * odometry_factor_;
+    data->robotPoseToOdom.y = msg.pose.pose.position.y * odometry_factor_;
 
-    double qw = last_odom_.pose.pose.orientation.w;
-    double qx = last_odom_.pose.pose.orientation.x;
-    double qy = last_odom_.pose.pose.orientation.y;
-    double qz = last_odom_.pose.pose.orientation.z;
+    double qw = msg.pose.pose.orientation.w;
+    double qx = msg.pose.pose.orientation.x;
+    double qy = msg.pose.pose.orientation.y;
+    double qz = msg.pose.pose.orientation.z;
     double siny_cosp = 2.0 * (qw * qz + qx * qy);
     double cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz);
     data->robotPoseToOdom.theta = std::atan2(siny_cosp, cosy_cosp);
@@ -198,7 +197,17 @@ void G1Brain::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
         "Odometer information: (%.3f, %.3f, %.3f)",
         data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta);
-  
+
+        
+    transCoord(
+        data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
+        data->odomToField.x, data->odomToField.y, data->odomToField.theta,
+        data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
+
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+        "== Final RobotToField: (%.3f, %.3f, %.3f)",
+        data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
+
 }
 
 
@@ -228,36 +237,6 @@ void G1Brain::servoStatesCallback(const robot_interfaces::msg::MotorStates::Shar
     // }// 处理舵机状态回调
     RCLCPP_DEBUG(this->get_logger(), "Received motor states");
 }
-
-
-void G1Brain::mainLoop() {
-    RCLCPP_INFO(this->get_logger(), "mainLoop() called");
-
-    if (!data) {
-        RCLCPP_ERROR(this->get_logger(), "data is nullptr in mainLoop!");
-        return;
-    }
-
-    RCLCPP_INFO(this->get_logger(), "odomCalibrated: %d", data->odomCalibrated);
-
-    if (data->odomCalibrated) {
-        transCoord(
-            data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
-            data->odomToField.x, data->odomToField.y, data->odomToField.theta,
-            data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
-
-        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-            "== Final RobotToField: (%.3f, %.3f, %.3f)",
-            data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
-
-        geometry_msgs::msg::Pose2D pose_msg;
-        pose_msg.x = data->robotPoseToField.x;
-        pose_msg.y = data->robotPoseToField.y;
-        pose_msg.theta = data->robotPoseToField.theta;
-        pose_pub_->publish(pose_msg);
-    }
-}
-
 
 
 

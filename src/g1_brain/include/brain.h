@@ -101,11 +101,9 @@ private:
     // 处理视觉识别消息
     void detectionsCallback(const robot_interfaces::msg::DetectionResults::SharedPtr msg);
     // 处理里程计消息
-    void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+    void odomCallback(const nav_msgs::msg::Odometry &msg);
     //处理底层状态信息
     void lowstateCallback(const robot_interfaces::msg::LowState::SharedPtr msg);
-
-    void mainLoop();
     
 
     // 检测处理
