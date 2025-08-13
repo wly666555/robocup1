@@ -25,10 +25,12 @@
 #include "locator.h"
 
 
-class BrainTree;
+
+using namespace std;
 using namespace std::placeholders;
 
 
+class BrainTree;
 
 
 /**
@@ -96,13 +98,8 @@ private:
     void lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowState> msg);
     
 
-    // 检测处理
-    nav_msgs::msg::Odometry last_odom_;   //!!修改！！
-    robot_interfaces::msg::LowState low_state;
-    robot_interfaces::msg::MotorStates motor_states;
+    // 检测处理 
     robot_interfaces::msg::MotorState motor_state;
-    robot_interfaces::msg::LowState last_lowstate_;
-    robot_interfaces::msg::MotorCmds motor_cmds;
 
     
     std::vector<robot_interfaces::msg::DetectionResult> last_detections_;

@@ -34,6 +34,8 @@ public:
     //IMU 数据
     robot_interfaces::msg::IMUState cur_imu;
 
+    double waist_yaw_angle;
+
     // 足球
     bool ballDetected = false;
     GameObject ball;
