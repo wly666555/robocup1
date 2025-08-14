@@ -25,6 +25,13 @@ find_package(sensor_msgs REQUIRED)
 file(GLOB SOURCE_FILES src/*.cpp)
 add_executable(g1_brain_node ${SOURCE_FILES})
 
+# Find the typesupport target
+rosidl_get_typesupport_target(typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+# Link the typesupport target to your project
+target_link_libraries(g1_brain_node ${typesupport_target})
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing -Wno-unused-parameter -Wno-sign-compare -Wno-missing-field-initializers -Wno-unused-variable")
+
 
 target_include_directories(g1_brain_node
   PUBLIC
@@ -32,7 +39,6 @@ target_include_directories(g1_brain_node
     ${OpenCV_INCLUDE_DIRS}
     ${behaviortree_cpp_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
-
 )
 
 
