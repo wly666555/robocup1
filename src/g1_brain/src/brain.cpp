@@ -33,6 +33,7 @@ void G1Brain::init() {
     data = std::make_shared<BrainData>();
     locator = std::make_shared<Locator>();
 
+    // node_ = std::make_shared<rclcpp::Node>("g1_brain_node_2"); 
     client = std::make_shared<RobotClient>(this);
 
     // 初始化粒子滤波定位器
@@ -55,13 +56,13 @@ void G1Brain::init() {
     detectionsSubscription = this->create_subscription<robot_interfaces::msg::DetectionResults>(
         "detection_results", 10, std::bind(&G1Brain::detectionsCallback, this, std::placeholders::_1));
 
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+    odom_sub_ = this->create_subscription<unitree_go::msg::SportModeState>(
         "/lf/odommodestate", 10,std::bind(&G1Brain::odomCallback, this, std::placeholders::_1));
 
     lowstate_sub_ = this->create_subscription<robot_interfaces::msg::LowState>(
         "/lowstate", 10,std::bind(&G1Brain::lowstateCallback, this, std::placeholders::_1));
 
-    pose_pub_ = this->create_publisher<geometry_msgs::msg::Pose2D>("robot_pose", 10);
+    // pose_pub_ = this->create_publisher<geometry_msgs::msg::Pose2D>("robot_pose", 10);
     RCLCPP_INFO(this->get_logger(), "G1Brain initialized");
 }
 
@@ -91,8 +92,9 @@ void G1Brain::loadConfig() {
     this->get_parameter("tree_file_path", config->treeFilePath);
 
 
-    RCLCPP_INFO(this->get_logger(), "height: %f",config->height);
-    RCLCPP_INFO(this->get_logger(), "game.field_type loaded: %s", field_type.c_str());
+    RCLCPP_INFO(this->get_logger(), "height: %s",config->playerRole.c_str());
+    RCLCPP_INFO(this->get_logger(), "game.field_type loaded: %s", config->playerStartPos.c_str());
+    RCLCPP_INFO(this->get_logger(), "tree_file_path: %s", config->treeFilePath.c_str());
 
     
     odometry_factor_ = config->scale_factor;
@@ -197,24 +199,29 @@ vector<double> G1Brain::getGoalPostAngles(const double margin)
     return vec;
 }
 
-void G1Brain::odomCallback(const std::shared_ptr<nav_msgs::msg::Odometry> msg) {
+void G1Brain::odomCallback(const std::shared_ptr<unitree_go::msg::SportModeState> msg) {
+    // 位置
+    data->robotPoseToOdom.x = msg->position[0] * odometry_factor_;
+    data->robotPoseToOdom.y = msg->position[1] * odometry_factor_;
 
-    data->robotPoseToOdom.x = msg->pose.pose.position.x * odometry_factor_;
-    data->robotPoseToOdom.y = msg->pose.pose.position.y * odometry_factor_;
+    // 四元数（从IMUState里取）
+    double qw = msg->imu_state.quaternion[0];
+    double qx = msg->imu_state.quaternion[1];
+    double qy = msg->imu_state.quaternion[2];
+    double qz = msg->imu_state.quaternion[3];
 
-    double qw = msg->pose.pose.orientation.w;
-    double qx = msg->pose.pose.orientation.x;
-    double qy = msg->pose.pose.orientation.y;
-    double qz = msg->pose.pose.orientation.z;
+    // 四元数转yaw
     double siny_cosp = 2.0 * (qw * qz + qx * qy);
     double cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz);
     data->robotPoseToOdom.theta = std::atan2(siny_cosp, cosy_cosp);
+
+    // 或者直接用欧拉角yaw
+    // data->robotPoseToOdom.theta = msg->imu_state.rpy[2];
 
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
         "Odometer information: (%.3f, %.3f, %.3f)",
         data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta);
 
-        
     transCoord(
         data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
         data->odomToField.x, data->odomToField.y, data->odomToField.theta,
@@ -223,8 +230,8 @@ void G1Brain::odomCallback(const std::shared_ptr<nav_msgs::msg::Odometry> msg) {
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
         "== Final RobotToField: (%.3f, %.3f, %.3f)",
         data->robotPoseToField.x, data->robotPoseToField.y, data->robotPoseToField.theta);
-
 }
+
 
 
 void G1Brain::lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowState> msg) {
@@ -234,9 +241,9 @@ void G1Brain::lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowS
     data->cur_imu.quaternion [1]= msg->imu_state.quaternion[1];
     data->cur_imu.quaternion [2]= msg->imu_state.quaternion[2];
     data->cur_imu.quaternion [3]= msg->imu_state.quaternion[3];
-    // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-    //     "Servo information: waist_yaw_angle(%.2f), servo_yaw_angle(%.2f), servo_pitch_angle(%.2f)",
-    //     waist_yaw_angle, servo_yaw_angle, servo_pitch_angle);
+//     // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+//     //     "Servo information: waist_yaw_angle(%.2f), servo_yaw_angle(%.2f), servo_pitch_angle(%.2f)",
+//     //     waist_yaw_angle, servo_yaw_angle, servo_pitch_angle);
 }
 
 void G1Brain::servoStatesCallback(const std::shared_ptr<robot_interfaces::msg::MotorStates> msg) {
@@ -409,4 +416,8 @@ void G1Brain::calibrateOdom(double x, double y, double theta)
                 x, y, theta,
                 data->odomToField.x, data->odomToField.y, data->odomToField.theta);
 
+
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+        "odomToField information: (%.3f, %.3f, %.3f)",
+        data->odomToField.x, data->odomToField.y, data->odomToField.theta);
 }

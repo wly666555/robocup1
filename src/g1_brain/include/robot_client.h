@@ -5,6 +5,7 @@
 #include <string>
 #include "robot_interfaces/msg/motor_cmd.hpp"
 #include "robot_interfaces/msg/motor_states.hpp"
+#include "robot_interfaces/msg/motor_state.hpp"
 #include "robot_interfaces/msg/motor_cmds.hpp"
 #include "unitree_api/msg/response.hpp"
 #include "unitree_api/msg/request.hpp"
@@ -26,6 +27,7 @@ public:
     void moveHead(double pitch, double yaw);
     void StandUp();
     rclcpp::Node::SharedPtr node_;
+    
 
 private:
 

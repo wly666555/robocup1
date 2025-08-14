@@ -54,8 +54,9 @@ void BrainTree::initEntry()
 
 void BrainTree::tick()
 {
+    // RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "Starting tree.tickOnce()");
     tree.tickOnce();
-    RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "tree.tickOnce();");
+    // RCLCPP_INFO(rclcpp::get_logger("BrainTree"), "Completed tree.tickOnce()");
 }
 
 // =================== 节点实现 ===================
@@ -218,6 +219,7 @@ BT::NodeStatus CamTrackBall::tick()
         pitch = brain->data->headPitch + deltaPitch;
         yaw = brain->data->headYaw - deltaYaw;//追踪逻辑
 
+        brain->client->moveHead(pitch,yaw);
     }
 }
 
@@ -347,6 +349,7 @@ BT::NodeStatus CamFindBall::tick()          //可以尝试时间控制
 
     brain->client->moveHead(_cmdSequence[_cmdIndex][0], _cmdSequence[_cmdIndex][1]);
     _timeLastCmd = brain->get_clock()->now();
+
     return NodeStatus::SUCCESS;
 }
 

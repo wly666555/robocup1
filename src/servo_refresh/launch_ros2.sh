@@ -27,8 +27,8 @@ source install/setup.bash
 
 echo "Starting servo_control node with ROS2 support..."
 echo "Topics:"
-echo "  - servo/motor_cmd (subscribe)"
-echo "  - servo/motor_states (publish)"
+echo "  - /servo/motor_cmd (subscribe, robot_interfaces/msg/MotorCmds)"
+echo "  - /servo/motor_state (publish, robot_interfaces/msg/MotorStates)"
 echo ""
 echo "Press Ctrl+C to stop"
 

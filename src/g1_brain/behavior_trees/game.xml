@@ -4,8 +4,10 @@
     <include path="./subtrees/subtree_goal_keeper_play.xml" />
 
     <BehaviorTree ID="MainTree">
-        <Sequence name="root">
-            <CamFindBall/>
+    <Sequence name="root">
+            <ReactiveSequence>
+            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+            </ReactiveSequence>
         </Sequence>
     </BehaviorTree>
 </root>

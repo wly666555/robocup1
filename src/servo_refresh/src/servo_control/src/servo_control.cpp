@@ -7,17 +7,9 @@
 
 // ROS2 消息支持
 #include "rclcpp/rclcpp.hpp"
-#include "robot_interfaces/msg/motor_cmd.hpp"
+#include "robot_interfaces/msg/motor_cmds.hpp"
+#include "robot_interfaces/msg/motor_states.hpp"
 #include "robot_interfaces/msg/motor_state.hpp"
-
-// Unitree SDK2 标准API
-#ifdef UNITREE_SDK_AVAILABLE
-#include <unitree/idl/go2/MotorCmds_.hpp>
-#include <unitree/idl/go2/MotorStates_.hpp>
-#include <unitree/robot/channel/channel_publisher.hpp>
-#include <unitree/robot/channel/channel_subscriber.hpp>
-#include <unitree/common/thread/thread.hpp>
-#endif
 
 namespace servo_control {
 
@@ -57,9 +49,6 @@ bool ServoControl::initialize() {
         // 初始化ROS2通信
         initRos2Communication();
         
-        // 初始化DDS通信
-        initDdsCommunication();
-        
         is_initialized_ = true;
         spdlog::info("ServoControl initialized successfully");
         return true;
@@ -77,12 +66,12 @@ void ServoControl::initRos2Communication() {
         ros2_node_ = std::make_shared<rclcpp::Node>("servo_control_node");
         
         // 创建发布者
-        motor_state_pub_ = ros2_node_->create_publisher<robot_interfaces::msg::MotorState>(
+        motor_state_pub_ = ros2_node_->create_publisher<robot_interfaces::msg::MotorStates>(
             "servo/motor_state", 10);
         spdlog::info("ROS2 motor state publisher initialized");
         
         // 创建订阅者
-        motor_cmd_sub_ = ros2_node_->create_subscription<robot_interfaces::msg::MotorCmd>(
+        motor_cmd_sub_ = ros2_node_->create_subscription<robot_interfaces::msg::MotorCmds>(
             "servo/motor_cmd", 10,
             std::bind(&ServoControl::motorCmdsCallback, this, std::placeholders::_1));
         spdlog::info("ROS2 motor command subscriber initialized");
@@ -96,103 +85,21 @@ void ServoControl::initRos2Communication() {
     }
 }
 
-void ServoControl::initDdsCommunication() {
-    #ifdef UNITREE_SDK_AVAILABLE
-    // 暂时禁用DDS功能，专注于舵机控制
-    spdlog::info("DDS communication temporarily disabled - focusing on servo control");
-    /*
-    try {
-        spdlog::info("Initializing DDS communication...");
-        
-        // 创建发布者 - 使用Unitree SDK2标准API
-        motor_state_pub_dds_ = std::make_shared<unitree::robot::ChannelPublisher<unitree_go::msg::dds_::MotorStates_>>("rt/g1_comp_servo/state");
-        if (!motor_state_pub_dds_) {
-            spdlog::error("Failed to create motor state publisher");
-            return;
-        }
-        
-        // InitChannel()返回void，不需要检查返回值
-        motor_state_pub_dds_->InitChannel();
-        spdlog::info("Motor state publisher initialized");
-        
-        // 创建订阅者 - 使用Unitree SDK2标准API
-        motor_cmd_sub_dds_ = std::make_shared<unitree::robot::ChannelSubscriber<unitree_go::msg::dds_::MotorCmds_>>("rt/g1_comp_servo/cmd");
-        if (!motor_cmd_sub_dds_) {
-            spdlog::error("Failed to create motor command subscriber");
-            return;
-        }
-        
-        // InitChannel()返回void，不需要检查返回值
-        motor_cmd_sub_dds_->InitChannel([this](const void* msg) {
-            try {
-                const auto* motor_cmds = static_cast<const unitree_go::msg::dds_::MotorCmds_*>(msg);
-                motorCmdsCallbackDds(*motor_cmds);
-            } catch (const std::exception& e) {
-                spdlog::error("Error in DDS callback: {}", e.what());
-            }
-        });
-        spdlog::info("Motor command subscriber initialized");
-        
-        spdlog::info("DDS communication initialized successfully");
-    } catch (const std::exception& e) {
-        spdlog::error("Failed to initialize DDS communication: {}", e.what());
-        // 清理资源
-        motor_state_pub_dds_.reset();
-        motor_cmd_sub_dds_.reset();
-    }
-    */
-    #else
-    spdlog::info("DDS communication disabled - Unitree SDK not available");
-    #endif
-}
+void ServoControl::motorCmdsCallback(const robot_interfaces::msg::MotorCmds::SharedPtr msg) {
+    // 处理ROS2舵机命令 - 总是包含两个关节：yaw和pitch
+    if (msg->states.size() >= 2) {
+        const auto &cmd_yaw = msg->states[0];
+        const auto &cmd_pitch = msg->states[1];
 
-void ServoControl::motorCmdsCallback(const robot_interfaces::msg::MotorCmd::SharedPtr msg) {
-    try {
-        // 处理ROS2消息
-        target_angle_command_(0) = msg->q;
-        target_angle_command_(1) = msg->q;  // 假设两个舵机使用相同的目标位置
-        
-        // 检查舵机启用状态
-        if (msg->mode == 1) {
-            joint_enable_ = true;
-        } else {
-            joint_enable_ = false;
-        }
-        
-        spdlog::debug("Received ROS2 motor command: q={}, mode={}, enable={}", 
-                     msg->q, msg->mode, joint_enable_);
-    } catch (const std::exception& e) {
-        spdlog::error("Error in ROS2 motorCmdsCallback: {}", e.what());
-    }
-}
+        target_angle_command_(0) = cmd_yaw.q;      // yaw (servo0)
+        target_angle_command_(1) = cmd_pitch.q;    // pitch (servo1)
 
-#ifdef UNITREE_SDK_AVAILABLE
-void ServoControl::motorCmdsCallbackDds(const unitree_go::msg::dds_::MotorCmds_& msg) {
-    // 暂时禁用DDS回调
-    spdlog::debug("DDS callback disabled");
-    /*
-    try {
-        if (msg.cmds().size() >= 2) {
-            for (int i = 0; i < 2; ++i) {
-                const auto& cmd = msg.cmds()[i];
-                target_angle_command_(i) = cmd.q();
-                
-                // 检查舵机启用状态
-                if (cmd.mode() == 1) {
-                    joint_enable_ = true;
-                } else {
-                    joint_enable_ = false;
-                }
-            }
-            spdlog::debug("Received motor commands: q0={}, q1={}, enable={}", 
-                         target_angle_command_(0), target_angle_command_(1), joint_enable_);
-        }
-    } catch (const std::exception& e) {
-        spdlog::error("Error in motorCmdsCallback: {}", e.what());
+        joint_enable_ = (cmd_yaw.mode == 1) || (cmd_pitch.mode == 1);
+
+        spdlog::debug("Received MotorCmds: yaw={}, pitch={}, enable={}",
+                      target_angle_command_(0), target_angle_command_(1), joint_enable_);
     }
-    */
 }
-#endif
 
 void ServoControl::publishMotorStates() {
     try {
@@ -200,57 +107,34 @@ void ServoControl::publishMotorStates() {
             return;
         }
         
-        // 创建ROS2状态消息
-        auto motor_state = std::make_unique<robot_interfaces::msg::MotorState>();
-        motor_state->mode = joint_enable_ ? 1 : 0;
-        motor_state->q = servo_angle_(0);  // 使用第一个舵机的角度
-        motor_state->dq = 0.0f;  // 速度暂时设为0
-        motor_state->ddq = 0.0f; // 加速度暂时设为0
-        motor_state->tau_est = 0.0f; // 扭矩估计暂时设为0
-        motor_state->temperature = 0; // 温度暂时设为0
-        motor_state->lost = 0; // 丢失状态暂时设为0
-        
-        // 发布状态
-        motor_state_pub_->publish(*motor_state);
-        spdlog::debug("Published ROS2 motor states: q={}, mode={}, enable={}", 
-                     motor_state->q, motor_state->mode, joint_enable_);
-    } catch (const std::exception& e) {
-        spdlog::error("Error in publishMotorStates: {}", e.what());
-    }
-}
+        // 创建ROS2状态消息（两通道）
+        robot_interfaces::msg::MotorStates motor_states_msg;
+        motor_states_msg.states.resize(2);
 
-#ifdef UNITREE_SDK_AVAILABLE
-void ServoControl::publishMotorStatesDds() {
-    // 暂时禁用DDS发布
-    spdlog::debug("DDS publish disabled");
-    /*
-    try {
-        if (!motor_state_pub_dds_) {
-            return;
-        }
-        
-        // 创建状态消息
-        unitree_go::msg::dds_::MotorStates_ motor_state;
-        motor_state.states().resize(2);
-        
-        for (int i = 0; i < 2; ++i) {
-            auto& state = motor_state.states()[i];
-            state.q(servo_angle_(i));
-            state.dq(0.0f);  // 速度暂时设为0
-            state.tau_est(0.0f); // 使用tau_est而不是tau
-            state.mode(joint_enable_ ? 1 : 0);
-        }
-        
+        motor_states_msg.states[0].mode = joint_enable_ ? 1 : 0;
+        motor_states_msg.states[0].q = servo_angle_(0);
+        motor_states_msg.states[0].dq = 0.0f;
+        motor_states_msg.states[0].ddq = 0.0f;
+        motor_states_msg.states[0].tau_est = 0.0f;
+        motor_states_msg.states[0].temperature = 0;
+        motor_states_msg.states[0].lost = 0;
+
+        motor_states_msg.states[1].mode = joint_enable_ ? 1 : 0;
+        motor_states_msg.states[1].q = servo_angle_(1);
+        motor_states_msg.states[1].dq = 0.0f;
+        motor_states_msg.states[1].ddq = 0.0f;
+        motor_states_msg.states[1].tau_est = 0.0f;
+        motor_states_msg.states[1].temperature = 0;
+        motor_states_msg.states[1].lost = 0;
+
         // 发布状态
-        motor_state_pub_dds_->Write(motor_state);
-        spdlog::debug("Published motor states: q0={}, q1={}, enable={}", 
-                     servo_angle_(0), servo_angle_(1), joint_enable_);
+        motor_state_pub_->publish(motor_states_msg);
+        spdlog::debug("Published MotorStates: q0={}, q1={}, enable={}",
+                      motor_states_msg.states[0].q, motor_states_msg.states[1].q, joint_enable_);
     } catch (const std::exception& e) {
         spdlog::error("Error in publishMotorStates: {}", e.what());
     }
-    */
 }
-#endif
 
 void ServoControl::initDxlController() {
     try {
@@ -336,8 +220,27 @@ void ServoControl::updateServoPositions() {
 }
 
 void ServoControl::checkMotorEnable() {
-    // 检查舵机是否启用 - 简化版本
-    joint_enable_ = true; // 总是启用
+    // 检查舵机是否启用
+    static bool last_joint_enable = false;
+    
+    if (joint_enable_ != last_joint_enable) {
+        if (joint_enable_) {
+            // 启用舵机
+            if (dxl_controller_ && !simulation_mode_) {
+                dxl_controller_->enable(0, 1);
+                dxl_controller_->enable(1, 1);
+                spdlog::info("Enable arm.");
+            }
+        } else {
+            // 禁用舵机
+            if (dxl_controller_ && !simulation_mode_) {
+                dxl_controller_->enable(0, 0);
+                dxl_controller_->enable(1, 0);
+                spdlog::info("Release arm.");
+            }
+        }
+        last_joint_enable = joint_enable_;
+    }
 }
 
 void ServoControl::controlLoop() {
@@ -385,14 +288,19 @@ void ServoControl::stop() {
 
 void ServoControl::loadConfig() {
     try {
-        // 获取可执行文件路径
-        std::filesystem::path exe_path = std::filesystem::current_path();
+        // 获取当前工作目录
+        std::filesystem::path current_path = std::filesystem::current_path();
+        spdlog::info("Current working directory: {}", current_path.string());
         
         // 尝试多个可能的配置文件路径
         std::vector<std::string> possible_paths = {
+            "config/servo_config.yaml",
             "config/config.yaml",
+            "../config/servo_config.yaml",
             "../config/config.yaml",
+            "../src/servo_control/config/servo_config.yaml",
             "../src/servo_control/config/config.yaml",
+            "../../src/servo_control/config/servo_config.yaml",
             "../../src/servo_control/config/config.yaml"
         };
         
@@ -406,12 +314,16 @@ void ServoControl::loadConfig() {
             if (std::filesystem::exists(config_path)) {
                 config_found = true;
                 spdlog::info("Using config from environment variable: {}", config_path);
+            } else {
+                spdlog::warn("Environment variable SERVO_CONFIG_PATH points to non-existent file: {}", config_path);
             }
         }
         
         // 如果环境变量不存在，尝试可能的路径
         if (!config_found) {
+            spdlog::info("Searching for config files in possible paths...");
             for (const auto& path : possible_paths) {
+                spdlog::debug("Checking path: {}", path);
                 if (std::filesystem::exists(path)) {
                     config_path = path;
                     config_found = true;
@@ -422,31 +334,83 @@ void ServoControl::loadConfig() {
         }
         
         if (!config_found) {
-            throw std::runtime_error("Config file not found in any of the expected locations");
+            spdlog::warn("Config file not found in any of the expected locations. Using default values.");
+            // 使用默认配置值
+            servo0_calibration_ = 1440.0f;
+            servo1_calibration_ = 2348.0f;
+            joint0_limitation_(0) = -50.0f;
+            joint0_limitation_(1) = 50.0f;
+            joint1_limitation_(0) = -20.0f;
+            joint1_limitation_(1) = 85.0f;
+            direction_(0) = 1.0f;
+            direction_(1) = -1.0f;
+            
+            // 设置编码器限制
+            servo0_limit_encoder_ = servo0_calibration_;
+            servo1_limit_encoder_ = servo1_calibration_;
+            
+            spdlog::info("Using default configuration values");
+            return;
         }
         
         // 加载YAML配置
+        spdlog::info("Loading config from: {}", config_path);
         YAML::Node config = YAML::LoadFile(config_path);
         
+        // 检查配置文件结构
+        if (config["servo_control"] && config["servo_control"]["ros__parameters"]) {
+            // 使用ROS2参数格式
+            config = config["servo_control"]["ros__parameters"];
+            spdlog::info("Using ROS2 parameter format");
+        }
+        
         // 读取配置参数
-        servo0_calibration_ = config["servo0_calibration"].as<float>();
-        servo1_calibration_ = config["servo1_calibration"].as<float>();
+        if (config["servo0_calibration"]) {
+            servo0_calibration_ = config["servo0_calibration"].as<float>();
+            spdlog::info("Loaded servo0_calibration: {}", servo0_calibration_);
+        } else {
+            spdlog::warn("servo0_calibration not found in config, using default: 1440");
+            servo0_calibration_ = 1440.0f;
+        }
+        
+        if (config["servo1_calibration"]) {
+            servo1_calibration_ = config["servo1_calibration"].as<float>();
+            spdlog::info("Loaded servo1_calibration: {}", servo1_calibration_);
+        } else {
+            spdlog::warn("servo1_calibration not found in config, using default: 2348");
+            servo1_calibration_ = 2348.0f;
+        }
         
         // 读取关节限制
         if (config["joint0"] && config["joint0"].IsSequence()) {
             joint0_limitation_(0) = config["joint0"][0].as<float>();
             joint0_limitation_(1) = config["joint0"][1].as<float>();
+            spdlog::info("Loaded joint0_limitation: [{}, {}]", joint0_limitation_(0), joint0_limitation_(1));
+        } else {
+            spdlog::warn("joint0 not found in config, using default: [-50, 50]");
+            joint0_limitation_(0) = -50.0f;
+            joint0_limitation_(1) = 50.0f;
         }
         
         if (config["joint1"] && config["joint1"].IsSequence()) {
             joint1_limitation_(0) = config["joint1"][0].as<float>();
             joint1_limitation_(1) = config["joint1"][1].as<float>();
+            spdlog::info("Loaded joint1_limitation: [{}, {}]", joint1_limitation_(0), joint1_limitation_(1));
+        } else {
+            spdlog::warn("joint1 not found in config, using default: [-20, 85]");
+            joint1_limitation_(0) = -20.0f;
+            joint1_limitation_(1) = 85.0f;
         }
         
         // 读取方向参数
         if (config["direction"] && config["direction"].IsSequence()) {
             direction_(0) = config["direction"][0].as<float>();
             direction_(1) = config["direction"][1].as<float>();
+            spdlog::info("Loaded direction: [{}, {}]", direction_(0), direction_(1));
+        } else {
+            spdlog::warn("direction not found in config, using default: [1, -1]");
+            direction_(0) = 1.0f;
+            direction_(1) = -1.0f;
         }
         
         // 设置编码器限制
@@ -454,11 +418,11 @@ void ServoControl::loadConfig() {
         servo1_limit_encoder_ = servo1_calibration_;
         
         spdlog::info("Configuration loaded successfully from: {}", config_path);
-        spdlog::info("servo0_calibration: {}", servo0_calibration_);
-        spdlog::info("servo1_calibration: {}", servo1_calibration_);
-        spdlog::info("joint0_limitation: [{}, {}]", joint0_limitation_(0), joint0_limitation_(1));
-        spdlog::info("joint1_limitation: [{}, {}]", joint1_limitation_(0), joint1_limitation_(1));
-        spdlog::info("direction: [{}, {}]", direction_(0), direction_(1));
+        spdlog::info("Final values - servo0_calibration: {}, servo1_calibration: {}", servo0_calibration_, servo1_calibration_);
+        spdlog::info("Final values - joint0_limitation: [{}, {}]", joint0_limitation_(0), joint0_limitation_(1));
+        spdlog::info("Final values - joint1_limitation: [{}, {}]", joint1_limitation_(0), joint1_limitation_(1));
+        spdlog::info("Final values - direction: [{}, {}]", direction_(0), direction_(1));
+        spdlog::info("Final values - servo0_limit_encoder: {}, servo1_limit_encoder: {}", servo0_limit_encoder_, servo1_limit_encoder_);
         
     } catch (const std::exception& e) {
         spdlog::error("Failed to load config: {}", e.what());

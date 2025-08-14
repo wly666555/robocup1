@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from robot_interfaces.msg import MotorCmd, MotorStates
+7from robot_interfaces.msg import MotorCmd, MotorStates
 import time
 
 class TestServoControl(Node):

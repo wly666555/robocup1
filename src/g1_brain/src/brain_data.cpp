@@ -42,7 +42,7 @@ Vec3<double> BrainData::computeBallPosition(
     if (rotMatPelvisToGlobal.isZero()) {
         Quat<double> quat;
         quat << cur_imu.quaternion[0], cur_imu.quaternion[1],
-                 cur_imu.quaternion[2], cur_imu.quaternion[3];
+                cur_imu.quaternion[2], cur_imu.quaternion[3];
         actualRotMat = quatToRotMat(quat);
     }
 

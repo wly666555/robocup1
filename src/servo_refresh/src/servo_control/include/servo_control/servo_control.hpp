@@ -8,17 +8,9 @@
 
 // ROS2 消息支持
 #include "rclcpp/rclcpp.hpp"
-#include "robot_interfaces/msg/motor_cmd.hpp"
+#include "robot_interfaces/msg/motor_cmds.hpp"
+#include "robot_interfaces/msg/motor_states.hpp"
 #include "robot_interfaces/msg/motor_state.hpp"
-
-// Unitree SDK2 标准API
-#ifdef UNITREE_SDK_AVAILABLE
-#include <unitree/idl/go2/MotorCmds_.hpp>
-#include <unitree/idl/go2/MotorStates_.hpp>
-#include <unitree/robot/channel/channel_publisher.hpp>
-#include <unitree/robot/channel/channel_subscriber.hpp>
-#include <unitree/common/thread/thread.hpp>
-#endif
 
 // DXL includes
 #include "servo_control/dxl_controller.hpp"
@@ -42,15 +34,8 @@ public:
 private:
     // ROS2 通信
     void initRos2Communication();
-    void motorCmdsCallback(const robot_interfaces::msg::MotorCmd::SharedPtr msg);
+    void motorCmdsCallback(const robot_interfaces::msg::MotorCmds::SharedPtr msg);
     void publishMotorStates();
-    
-    // DDS 通信 - 使用Unitree SDK2标准API
-    void initDdsCommunication();
-    #ifdef UNITREE_SDK_AVAILABLE
-    void motorCmdsCallbackDds(const unitree_go::msg::dds_::MotorCmds_& msg);
-    void publishMotorStatesDds();
-    #endif
 
     // 舵机控制
     void initDxlController();
@@ -65,15 +50,8 @@ private:
 
     // ROS2 发布者和订阅者
     rclcpp::Node::SharedPtr ros2_node_;
-    rclcpp::Publisher<robot_interfaces::msg::MotorState>::SharedPtr motor_state_pub_;
-    rclcpp::Subscription<robot_interfaces::msg::MotorCmd>::SharedPtr motor_cmd_sub_;
-    
-    // DDS 发布者和订阅者 - 使用Unitree SDK2标准API
-    #ifdef UNITREE_SDK_AVAILABLE
-    std::shared_ptr<unitree::robot::ChannelPublisher<unitree_go::msg::dds_::MotorStates_>> motor_state_pub_dds_;
-    std::shared_ptr<unitree::robot::ChannelSubscriber<unitree_go::msg::dds_::MotorCmds_>> motor_cmd_sub_dds_;
-    unitree::common::RecurrentThreadPtr control_thread_;
-    #endif
+    rclcpp::Publisher<robot_interfaces::msg::MotorStates>::SharedPtr motor_state_pub_;
+    rclcpp::Subscription<robot_interfaces::msg::MotorCmds>::SharedPtr motor_cmd_sub_;
 
     // DXL 控制器
     std::unique_ptr<DxlController> dxl_controller_;

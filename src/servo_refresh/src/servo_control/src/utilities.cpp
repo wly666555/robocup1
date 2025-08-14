@@ -1,32 +1,37 @@
 #include "servo_control/utilities.hpp"
 #include <cmath>
+#include <algorithm>
 
 namespace servo_control {
 
 namespace utilities {
 
-float angle2encoder(float angle, float calibration, const Eigen::Vector2f& limitation, float direction) {
-    // 应用校准和方向
-    float calibrated_angle = (angle - calibration) * direction;
-    
+float angle2encoder(float angle, float servo_limit_encoder, const Eigen::VectorXf& limitation, float direction) {
     // 限制角度范围
-    float limited_angle = std::clamp(calibrated_angle, limitation(0), limitation(1));
+    float desired_angle = std::clamp(angle, limitation(0), limitation(1));
     
-    // 转换为编码器值 (假设编码器范围是0-4095)
-    float encoder = (limited_angle - limitation(0)) / (limitation(1) - limitation(0)) * 4095.0f;
+    // 使用与g1_comp_servo_service相同的编码器分辨率计算
+    float servo_encoder_resolution = 4096.0f / (2.0f * M_PI);
+    float joint_range = limitation(1) - limitation(0); 
+    float encoder_range = joint_range * (M_PI / 180.0f) * servo_encoder_resolution;
     
-    return encoder;
+    // 应用方向和校准，与g1_comp_servo_service保持一致
+    float desired_encoder = direction * (desired_angle - limitation(0)) * (encoder_range / joint_range) + servo_limit_encoder;
+    
+    return desired_encoder;
 }
 
-float encoder2angle(uint32_t encoder, float calibration, const Eigen::Vector2f& limitation, float direction) {
-    // 编码器值转角度
-    float normalized_encoder = static_cast<float>(encoder) / 4095.0f;
-    float angle = normalized_encoder * (limitation(1) - limitation(0)) + limitation(0);
+float encoder2angle(uint32_t encoder, float servo_limit_encoder, const Eigen::VectorXf& limitation, float direction) {
+    // 使用与g1_comp_servo_service相同的编码器分辨率计算
+    float servo_encoder_resolution = 4096.0f / (2.0f * M_PI);
+    float joint_range = limitation(1) - limitation(0); 
+    float encoder_range = joint_range * (M_PI / 180.0f) * servo_encoder_resolution;
     
-    // 应用方向和校准
-    float calibrated_angle = angle / direction + calibration;
+    // 应用方向和校准，与g1_comp_servo_service保持一致
+    float desired_encoder = direction * (static_cast<float>(encoder) - servo_limit_encoder) * ((joint_range * (M_PI / 180.0f)) / encoder_range) + limitation(0) * (M_PI / 180.0f);
+    desired_encoder *= (180.0f / M_PI);
     
-    return calibrated_angle;
+    return desired_encoder;
 }
 
 } // namespace utilities

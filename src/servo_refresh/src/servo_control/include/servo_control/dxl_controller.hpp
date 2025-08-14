@@ -40,7 +40,7 @@ public:
 
 private:
     // 设备设置
-    static constexpr uint8_t PROTOCOL_VERSION = 2.0;
+    static constexpr float PROTOCOL_VERSION = 2.0f;
     static constexpr uint16_t ADDR_TORQUE_ENABLE = 64;
     static constexpr uint16_t POSITION_D_GAIN = 80;
     static constexpr uint16_t POSITION_P_GAIN = 84;

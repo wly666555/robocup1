@@ -12,7 +12,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include "nav_msgs/msg/odometry.hpp"
+#include "unitree_go/msg/sport_mode_state.hpp"
 #include "robot_interfaces/msg/low_state.hpp"
 #include "locate/yaml_parser.h"
 #include "locate/pose.h"
@@ -75,7 +75,7 @@ public:
 private:
     
     // 成员变量
-    double odometry_factor_{1.0};
+    double odometry_factor_;
     double servo_pitch_compensation_{0.0};
     double servo_yaw_compensation_{0.0};
     double servo_height_{0.0};
@@ -94,7 +94,7 @@ private:
 
     void servoStatesCallback(const std::shared_ptr<robot_interfaces::msg::MotorStates> msg);
     void detectionsCallback(const std::shared_ptr<robot_interfaces::msg::DetectionResults> msg);
-    void odomCallback(const std::shared_ptr<nav_msgs::msg::Odometry> msg);
+    void odomCallback(const std::shared_ptr<unitree_go::msg::SportModeState> msg);
     void lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowState> msg);
     
 
@@ -117,14 +117,13 @@ private:
     // 订阅者
     rclcpp::Subscription<robot_interfaces::msg::MotorStates>::SharedPtr servoStatesSubscription;
     rclcpp::Subscription<robot_interfaces::msg::DetectionResults>::SharedPtr detectionsSubscription;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr odom_sub_;
     rclcpp::Subscription<robot_interfaces::msg::LowState>::SharedPtr lowstate_sub_;
     rclcpp::Subscription<robot_interfaces::msg::MotorStates>::SharedPtr servo_states_sub_;
 
     // 发布者
-    rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pose_pub_;
-
-
+    // rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pose_pub_;
+    // rclcpp::Node::SharedPtr node_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     rclcpp::TimerBase::SharedPtr timer_;   
 };

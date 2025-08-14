@@ -127,9 +127,9 @@ private:
 class CamFindBall : public SyncActionNode {
 public:
     CamFindBall(const std::string& name, const NodeConfig& config, G1Brain* brain);
- 
+
     NodeStatus tick() override;
- 
+
 private:
     double _cmdSequence[6][2];    // The sequence of actions for finding the ball, in which the robot looks towards these positions in order.
     rclcpp::Time _timeLastCmd;    // The time of the last command execution, used to ensure there is a time interval between commands.
