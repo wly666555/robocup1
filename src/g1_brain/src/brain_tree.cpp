@@ -27,7 +27,7 @@ void BrainTree::init()
     REGISTER_BUILDER(CamFindBall)
     REGISTER_BUILDER(SelfLocate)
     REGISTER_BUILDER(SetVelocity)
-    REGISTER_BUILDER(Rotate)
+    REGISTER_BUILDER(RobotFindBall)
     REGISTER_BUILDER(MoveToPoseOnField)
     
 
@@ -161,10 +161,11 @@ BT::NodeStatus Adjust::tick()
         return BT::NodeStatus::SUCCESS; 
     }
 
+
     double vx = 0, vy = 0, vtheta = 0;
-    double vxLimit = 1.0;
-    double vyLimit = 0.8;
-    double vthetaLimit = 1.0;
+    double vxLimit = 0.5;
+    double vyLimit = 0.5;
+    double vthetaLimit = 1.5;
 
 
     double kickDir = atan2(-brain->data->ball.posToField.x, brain->config->fieldDimensions.length / 2 - brain->data->ball.posToField.x);
@@ -248,8 +249,8 @@ BT::NodeStatus Chase::tick()
 
 
     double vxLimit = 1.0;
-    double vyLimit = 0.8;
-    double vthetaLimit = 1.0;
+    double vyLimit = 1.0;
+    double vthetaLimit = 0.25;
 
 
     double ballRange = brain->data->ball.range;
@@ -372,7 +373,6 @@ BT::NodeStatus Kick::onStart()
 
     double vxLimit = 1.6;
     double vyLimit = 0.6;
-    double vthetaLimit = 1.6;
 
     int minMSecKick = 1000;
 
@@ -399,7 +399,7 @@ BT::NodeStatus Kick::onStart()
     _msecKick = speed > 1e-5 ? minMSecKick + static_cast<int>(brain->data->ball.range / speed * 1000) : minMSecKick;
     
     
-    // brain->client->setVelocity(vx, vy, 0);
+    // brain->client->move(vx, vy, 0);
     return BT::NodeStatus::SUCCESS;
 }
 
@@ -420,7 +420,9 @@ void Kick::onHalted()
 
 BT::NodeStatus StrikerDecide::tick()
 {
-    string lastDecision;
+    double chaseRangeThreshold;
+    getInput("chase_threshold", chaseRangeThreshold);
+    string lastDecision ;
     getInput("decision_in", lastDecision);
 
 
@@ -434,8 +436,6 @@ BT::NodeStatus StrikerDecide::tick()
     double ballYaw = brain->data->ball.yawToRobot;
 
     string newDecision;
-    double chaseRangeThreshold;
-    getInput("chase_threshold", chaseRangeThreshold);
 
 
     if (!brain->tree->getEntry<bool>("ball_location_known"))
@@ -462,7 +462,10 @@ BT::NodeStatus StrikerDecide::tick()
 
 BT::NodeStatus GoalieDecide::tick()
 {
-    string lastDecision;
+
+    double chaseRangeThreshold;
+    getInput("chase_threshold", chaseRangeThreshold);
+    string lastDecision, position;
     getInput("decision_in", lastDecision);
 
 
@@ -476,8 +479,6 @@ BT::NodeStatus GoalieDecide::tick()
     double ballYaw = brain->data->ball.yawToRobot;
 
     string newDecision;
-    double chaseRangeThreshold;
-    getInput("chase_threshold", chaseRangeThreshold);
 
 
     if (!brain->tree->getEntry<bool>("ball_location_known"))
@@ -508,37 +509,27 @@ BT::NodeStatus GoalieDecide::tick()
 
 BT::NodeStatus MoveToPoseOnField::tick()
 {
-    Pose2D field_position;
-    field_position.x = 0;
-    field_position.y = 0;
 
-    brain->data->field2robot(field_position);
-    // 设置目标位置容差
-    const double positionTolerance = 0.5;  // 10厘米
-    const double angleTolerance = 0.1;    // 约5.7度
-    double vx = field_position.x;
-    double vy = field_position.y;
+    double tx, ty, ttheta, longRangeThreshold, turnThreshold, xTolerance, yTolerance, thetaTolerance;
+    getInput("x", tx);
+    getInput("y", ty);
+    getInput("theta", ttheta);
+    getInput("long_range_threshold", longRangeThreshold);
+    getInput("turn_threshold", turnThreshold);
+    getInput("x_tolerance", xTolerance);
+    getInput("y_tolerance", yTolerance);
+    getInput("theta_tolerance", thetaTolerance);
 
-    // 使用PD控制器计算速度
-    const double kp = 0.5;  // 比例增益
-    const double maxSpeed = 0.6;  // 最大速度
-    
-    vx *= kp;
-    vy *= kp;
-    
-    // 限制速度
-    vx = saturation(vx, Vec2<double>(-maxSpeed, maxSpeed));
-    vy = saturation(vy, Vec2<double>(-maxSpeed, maxSpeed));
+    double vxLimit = 1.0 ;
+    double vyLimit = 0.5 ;
+    double vthetaLimit = 0.4 ;
 
-    // 可选：添加朝向控制
-    double targetYaw = atan2(field_position.y,field_position.x);
-    double vyaw = targetYaw;  // 简单的朝向控制
-    // vyaw = saturation(vyaw, Vec2<double>(-0.3, 0.3));
-    vyaw=0;
-    brain->client->Move(vx, vy, vyaw);
+    brain->client->moveToPoseOnField(tx, ty, ttheta, longRangeThreshold, turnThreshold, vxLimit, vyLimit, vthetaLimit, xTolerance, yTolerance, thetaTolerance);
+    return NodeStatus::SUCCESS;
+
 }
 
-BT::NodeStatus Rotate::onStart()
+BT::NodeStatus RobotFindBall::onStart()
 {
     if(brain->data->ballDetected)
     {
@@ -549,14 +540,14 @@ BT::NodeStatus Rotate::onStart()
 
     return BT::NodeStatus::RUNNING;
 }
-BT::NodeStatus Rotate::onRunning()
+BT::NodeStatus RobotFindBall::onRunning()
 {
     if(brain->data->ballDetected)
     {
         brain->client->Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
     }
-    double vyawLimit = 1.5;
+    double vyawLimit = 1.0;
     getInput("vyaw_limit", vyawLimit);
 
     double vx = 0;
@@ -565,7 +556,7 @@ BT::NodeStatus Rotate::onRunning()
     brain->client->Move(0, 0, vyawLimit * turn_dir);
     return BT::NodeStatus::RUNNING;
 }
-void Rotate::onHalted()
+void RobotFindBall::onHalted()
 {
     turn_dir = 1.0;
 }

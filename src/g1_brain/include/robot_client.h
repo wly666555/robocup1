@@ -26,7 +26,8 @@ public:
     void init();
     void moveHead(double pitch, double yaw);
     void StandUp();
-    rclcpp::Node::SharedPtr node_;
+
+    int moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance);
     
 
 private:

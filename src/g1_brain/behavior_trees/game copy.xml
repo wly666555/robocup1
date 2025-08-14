@@ -5,13 +5,17 @@
 
     <BehaviorTree ID="MainTree">
         <Sequence name="root">
-            <ReactiveSequence >
+            <ReactiveSequence _while="control_state==2"  name="locate">
                 <CamFindBall  _while="!odom_calibrated"/>
                 <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
                 <SelfLocate mode="enter_field" />
+            </ReactiveSequence>
+
+            <ReactiveSequence _while="control_state=='3'" name="play">
                 <SubTree ID="StrikerPlay" _autoremap="true" _while="player_role == 'striker'" />
                 <SubTree ID="GoalKeeperPlay" _autoremap="true" _while="player_role == 'goal_keeper'" />
             </ReactiveSequence>
+
         </Sequence>
     </BehaviorTree>
 </root>

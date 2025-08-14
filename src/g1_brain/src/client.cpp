@@ -12,6 +12,8 @@ void RobotClient::init()
     cmd_puber_ = brain->create_publisher<robot_interfaces::msg::MotorCmds>("/servo/motor_cmd", 10);
 }
 
+
+// pitch yaw (rad)
 void RobotClient::moveHead(double pitch, double yaw) {
 
     robot_interfaces::msg::MotorCmds motor_cmds;
@@ -62,3 +64,47 @@ void RobotClient::Move(float vx, float vy, float vyaw) {
     req_puber_->publish(req);
 }
 
+int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance)
+{
+    Pose2D target_f, target_r; // 移动目标在 field 和 robot 坐标系中的 Pose
+    target_f.x = tx;
+    target_f.y = ty;
+    target_f.theta = ttheta;
+    target_r = brain->data->field2robot(target_f);
+    double targetAngle = atan2(target_r.y, target_r.x);
+    double targetDist = norm(target_r.x, target_r.y);
+
+    double vx, vy, vtheta;
+    // 已经到达目标?
+    if (
+        (fabs(brain->data->robotPoseToField.x - target_f.x) < xTolerance) && (fabs(brain->data->robotPoseToField.y - target_f.y) < yTolerance) && (fabs(toPInPI(brain->data->robotPoseToField.theta - target_f.theta)) < thetaTolerance))
+    {
+        return Move(0, 0, 0);
+    }
+
+    static double breakOscillate = 0.0;
+    if (targetDist > longRangeThreshold - breakOscillate)
+    {
+        breakOscillate = 0.5;
+
+        // 角度较大, 先转向目标点
+        if (fabs(targetAngle) > turnThreshold)
+        {
+            vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
+            return Move(0, 0, vtheta);
+        }
+
+        // else
+
+        vx = cap(target_r.x, vxLimit, -vxLimit);
+        vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
+        return Move(vx, 0, vtheta);
+    }
+
+    // else 比较近了
+    breakOscillate = 0.0;
+    vx = cap(target_r.x, vxLimit, -vxLimit);
+    vy = cap(target_r.y, vyLimit, -vyLimit);
+    vtheta = cap(target_r.theta, vthetaLimit, -vthetaLimit);
+    return Move(vx, vy, vtheta);
+}

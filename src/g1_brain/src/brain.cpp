@@ -21,7 +21,7 @@ G1Brain::G1Brain() : Node("g1_brain_node") {
     declare_parameter<double>("robot.pitch_limit_min", -20.0);
     declare_parameter<double>("robot.pitch_limit_max", 85.0);
 
-    declare_parameter<double>("memory.ball_memory_length", 5.0);
+    declare_parameter<double>("memory.memoryLength", 5.0);
     declare_parameter<string>("tree_file_path", "");
 
 }
@@ -33,7 +33,6 @@ void G1Brain::init() {
     data = std::make_shared<BrainData>();
     locator = std::make_shared<Locator>();
 
-    // node_ = std::make_shared<rclcpp::Node>("g1_brain_node_2"); 
     client = std::make_shared<RobotClient>(this);
 
     // 初始化粒子滤波定位器
@@ -88,7 +87,7 @@ void G1Brain::loadConfig() {
     this->get_parameter("robot.yaw_limit_max", config->yaw_limit_max);
     this->get_parameter("robot.pitch_limit_min", config->pitch_limit_min);
     this->get_parameter("robot.pitch_limit_max", config->pitch_limit_max);
-    this->get_parameter("memory.ball_memory_length", config->ball_memory_length);
+    this->get_parameter("memory.memoryLength", config->memoryLength);
     this->get_parameter("tree_file_path", config->treeFilePath);
 
 
@@ -163,7 +162,14 @@ void G1Brain::updateBallMemory() {
     double y_T = data->homoMatBallToWorldAligned(1,3);
     double z_T = data->homoMatBallToWorldAligned(2,3);
     data->ball.range = std::sqrt(x_T * x_T + y_T * y_T);
+    tree->setEntry<double>("ball_range", data->ball.range);  
     data->ball.pitchToRobot = asin(config->height / data->ball.range);
+
+    if (get_clock()->now().seconds() - data->ball.timePoint.seconds() > config->memoryLength)
+    {
+        tree->setEntry<bool>("ball_location_known", false);
+        data->ballDetected = false;
+    }
 
 }
 
@@ -299,9 +305,13 @@ void G1Brain::detectionsCallback(const std::shared_ptr<robot_interfaces::msg::De
 std::vector<GameObject> G1Brain::getGameObjects(const std::vector<robot_interfaces::msg::DetectionResult>& detection_results, const Pose& p_eye2base, const Pose2D& robotPoseToField)
 {
     std::vector<GameObject> gameObjects;
+
+    rclcpp::Time current_time = rclcpp::Clock().now();
+
     for (const auto &result : detection_results) {
         GameObject gObj;
 
+        gObj.timePoint = current_time;
         gObj.label = result.class_name;
 
         gObj.boundingBox.xmin = result.box[0];

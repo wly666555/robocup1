@@ -231,7 +231,7 @@ public:
         return {
             InputPort<double>("chase_threshold", 1.0, "超过这个距离, 执行追球动作"),
             InputPort<string>("decision_in", "", "用于读取上一次的 decision"),
-            OutputPort<std::string>("decision", "decision string")};
+            OutputPort<string>("decision_out")};
     }
 
     BT::NodeStatus tick() override;
@@ -265,15 +265,28 @@ class MoveToPoseOnField : public BT::SyncActionNode{
 public:
     MoveToPoseOnField(const string &name, const NodeConfig &config, G1Brain *_brain) : SyncActionNode(name, config), brain(_brain) {}
 
+    static BT::PortsList providedPorts()
+    {
+        return {
+            InputPort<double>("x", 0, "目标 x 坐标, Field 坐标系"),
+            InputPort<double>("y", 0, "目标 y 坐标, Field 坐标系"),
+            InputPort<double>("theta", 0, "目标最终朝向, Field 坐标系"),
+            InputPort<double>("long_range_threshold", 1.5, "目标点的距离超过这个值时, 优先走过去, 而不是细调位置和方向"),
+            InputPort<double>("turn_threshold", 0.4, "长距离时, 目标点的方向超这个数值时, 先转向目标点"),
+            InputPort<double>("x_tolerance", 0.2, "x 容差"),
+            InputPort<double>("y_tolerance", 0.2, "y 容差"),
+            InputPort<double>("theta_tolerance", 0.1, "theta 容差"),
+        };
+
     BT::NodeStatus tick() override;
 
 private:
     G1Brain *brain;
 };
 
-class Rotate : public BT::StatefulActionNode{
+class RobotFindBall : public BT::StatefulActionNode{
 public:
-    Rotate(const string &name, const NodeConfig &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
+    RobotFindBall(const string &name, const NodeConfig &config, G1Brain *_brain) : StatefulActionNode(name, config), brain(_brain) {}
     
     BT::NodeStatus onStart() override;
     BT::NodeStatus onRunning() override;

@@ -21,7 +21,7 @@ g1_brain_node:
     
     # 记忆相关参数
     memory:
-      ball_memory_length: 5.0  # 球位置记忆时间（秒）
+      memoryLength: 5.0  # 球位置记忆时间（秒）
     tree_file_path: "src/g1_brain/behavior_trees/game.xml"
 
 

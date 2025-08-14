@@ -126,6 +126,7 @@ struct GameObject
     Point posToField;                // The position of the object in the field coordinate system. The position is 2D, ignoring the z value. x is forward and y is leftward.
     double range;                    // The straight-line distance from the object to the projection point of the robot's center on the field plane.
     double pitchToRobot, yawToRobot; // The pitch and yaw of the object relative to the front of the robot, in rad. Downward and leftward are positive.        // The time when the object was detected.
+    rclcpp::Time timePoint;
 };
 
 

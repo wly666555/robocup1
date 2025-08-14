@@ -123,7 +123,6 @@ private:
 
     // 发布者
     // rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pose_pub_;
-    // rclcpp::Node::SharedPtr node_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     rclcpp::TimerBase::SharedPtr timer_;   
 };
