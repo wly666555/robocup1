@@ -11,11 +11,18 @@
                 <SelfLocate mode="enter_field" />
             </ReactiveSequence>
 
-            <ReactiveSequence _while="control_state=='3'" name="play">
+            <ReactiveSequence _while="control_state=='3'" name="enter">
+                <CamScanField />
+                <MoveToPoseOnField x="-2.0" _while="player_role == 'striker'"     />
+                <MoveToPoseOnField x="-5.5" _while="player_role == 'goal_keeper'" />
+                <SelfLocate mode="trust_direction" />
+            </ReactiveSequence>
+
+            <ReactiveSequence _while="control_state=='4'" name="play">
                 <SubTree ID="StrikerPlay" _autoremap="true" _while="player_role == 'striker'" />
                 <SubTree ID="GoalKeeperPlay" _autoremap="true" _while="player_role == 'goal_keeper'" />
             </ReactiveSequence>
-
+            
         </Sequence>
     </BehaviorTree>
 </root>

@@ -109,28 +109,20 @@ BT::NodeStatus SelfLocate::tick() {
         thetaMin = -M_PI / 4;
         thetaMax = M_PI / 4;
     }
-    else if (mode ==  "center" || (mode ==  "normal" && !"odom_calibrated"))
+    else if (mode == "trust_direction")
     {
-        xMin = -brain->config->fieldDimensions.length / 2;
-        xMax = brain->config->fieldDimensions.length / 2;
-        yMin = -brain->config->fieldDimensions.width / 2;
-        yMax = brain->config->fieldDimensions.width / 2;
-        thetaMin = -M_PI / 2;
-        thetaMax = M_PI / 2;
-    }
-    else if (mode ==  "normal" && "odom_calibrated")
-    {
-        int msec = brain->msecsSince(brain->data->lastSuccessfulLocalizeTime);
-        double maxDriftSpeed = 0.2;
-        double maxDrift = msec / 1000.0 * maxDriftSpeed;
+        int msec = static_cast<int>(brain->msecsSince(brain->data->lastSuccessfulLocalizeTime));
+        double maxDriftSpeed = 0.1;                      // m/s  0.1vs 0.2
+        double maxDrift = msec / 1000.0 * maxDriftSpeed; // 在这个时间内, odom 最多漂移了多少距离
 
-        xMin = std::max(-brain->config->fieldDimensions.length / 2, brain->data->robotPoseToField.x - maxDrift);
-        xMax = std::min(brain->config->fieldDimensions.length / 2, brain->data->robotPoseToField.x + maxDrift);
-        yMin = std::max(-brain->config->fieldDimensions.width / 2, brain->data->robotPoseToField.y - maxDrift);
-        yMax = std::min(brain->config->fieldDimensions.width / 2, brain->data->robotPoseToField.y + maxDrift);
-        thetaMin = brain->data->robotPoseToField.theta - M_PI / 4;
-        thetaMax = brain->data->robotPoseToField.theta + M_PI / 4;
-    } else {
+        xMin = max(-brain->config->fieldDimensions.length / 2, brain->data->robotPoseToField.x - maxDrift);
+        xMax = min(brain->config->fieldDimensions.length / 2, brain->data->robotPoseToField.x + maxDrift);
+        yMin = max(-brain->config->fieldDimensions.width / 2, brain->data->robotPoseToField.y - maxDrift);
+        yMax = min(brain->config->fieldDimensions.width / 2, brain->data->robotPoseToField.y + maxDrift);
+        thetaMin = brain->data->robotPoseToField.theta - M_PI / 18;  // 18 vs 4
+        thetaMax = brain->data->robotPoseToField.theta + M_PI / 18;  // 18 vs 4
+    }
+    else {
         std::cout << "[ERROR]: Unsupported mode, " << mode << std::endl;
         return BT::NodeStatus::SUCCESS;
     }
