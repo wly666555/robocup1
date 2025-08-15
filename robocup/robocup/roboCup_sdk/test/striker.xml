@@ -7,7 +7,7 @@
               <SelfLocate mode="enter_field" />
           </ReactiveSequence>
 
-          <ReactiveSequence _while="player_role=="striker"" name="/比赛">
+          <ReactiveSequence _while="player_role=='striker'" name="/比赛">
             <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
             <Sequence>
                   <StrikerDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.2" />
