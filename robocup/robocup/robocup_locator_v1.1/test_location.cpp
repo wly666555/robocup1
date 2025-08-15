@@ -10,6 +10,7 @@
 #include "dds/Subscription.h"
 #include "DetectionModule.hpp"
 #include "LocationModule.hpp"
+#include "SignalModule.hpp"
 #include "pose.h"
 #include "Locator.h"
 #include "misc.h"
@@ -57,6 +58,9 @@ int main(int argc, char *argv[])
     // Create Location Publisher
     std::unique_ptr<unitree::robot::RealTimePublisher<LocationModule::LocationResult>> posePub; 
     posePub = std::make_unique<unitree::robot::RealTimePublisher<LocationModule::LocationResult>>("rt/locationresults");
+    std::unique_ptr<unitree::robot::RealTimePublisher<LocationModule::LocationResult>> signalPub;
+    signalPub = std::make_unique<unitree::robot::RealTimePublisher<LocationModule::LocationResult>>("rt/locationsignal");
+
 
     // Load config file
     YamlParser config;
@@ -130,6 +134,7 @@ int main(int argc, char *argv[])
             posePub -> msg_.robot2field_x() = locator.robotPoseToField.x;
             posePub -> msg_.robot2field_y() = locator.robotPoseToField.y;
             posePub -> msg_.robot2field_theta() = locator.robotPoseToField.theta;
+            signalPub -> msg_.flag() = locator.odomCalibrated;
             posePub -> unlockAndPublish();
 
             if (is_display) {
