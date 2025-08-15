@@ -97,8 +97,6 @@ void G1Brain::loadConfig() {
 
     
     odometry_factor_ = config->scale_factor;
-    servo_pitch_compensation_ = config->pitch_compensation;
-    servo_yaw_compensation_ = config->yaw_compensation;
     servo_height_ = config->height;
     config->handle();
 
@@ -247,22 +245,19 @@ void G1Brain::lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowS
     data->cur_imu.quaternion [1]= msg->imu_state.quaternion[1];
     data->cur_imu.quaternion [2]= msg->imu_state.quaternion[2];
     data->cur_imu.quaternion [3]= msg->imu_state.quaternion[3];
-//     // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-//     //     "Servo information: waist_yaw_angle(%.2f), servo_yaw_angle(%.2f), servo_pitch_angle(%.2f)",
-//     //     waist_yaw_angle, servo_yaw_angle, servo_pitch_angle);
+
 }
 
 void G1Brain::servoStatesCallback(const std::shared_ptr<robot_interfaces::msg::MotorStates> msg) {
 
     // 解析头部舵机 yaw/pitch（按照约定：states[0]=yaw, states[1]=pitch，单位为度）
 
-    float yaw_deg = msg->states[0].q;
-    float pitch_deg = msg->states[1].q;
+    float yaw_deg = msg->states[0].q   + config->yaw_compensation;
+    float pitch_deg = msg->states[1].q + config->pitch_compensation;
 
     // 转为弧度写入运行时数据
     data->headYaw = deg2rad(static_cast<double>(yaw_deg));
     data->headPitch = deg2rad(static_cast<double>(pitch_deg));
-    // unified usage through data->headYaw / data->headPitch
 
 }
 

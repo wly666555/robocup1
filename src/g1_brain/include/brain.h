@@ -76,8 +76,6 @@ private:
     
     // 成员变量
     double odometry_factor_;
-    double servo_pitch_compensation_{0.0};
-    double servo_yaw_compensation_{0.0};
     double servo_height_{0.0};
 
 
