@@ -1,0 +1,23 @@
+<root BTCPP_format="4" >
+   <include path="./subtree_cam_find_and_track_ball.xml" />
+   <BehaviorTree ID="GoalKeeperPlay">
+      <ReactiveSequence >
+         <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+         <Sequence>
+               <GoalieDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.2" />
+               <Sequence _while="decision == 'find'">
+                  <RobotFindBall _while="ball_range <= 3.0" />
+                  <MoveToPoseOnField _while="ball_range > 3.0"  long_range_threshold="100.0" x="-6.0" />
+               </Sequence>
+               <MoveToPoseOnField _while="decision == 'gohome'" long_range_threshold="100.0" x="-6.0" />
+               <Chase   _while="decision == 'chase'"  dist="1.0"/>
+               <Adjust  _while="decision == 'adjust'"/>
+               <Sequence  _while="decision == 'kick'">
+                  <SetVelocity />
+                  <Sleep msec="1000" />
+                  <Kick  min_msec_kick="1000"/>
+               </Sequence>
+         </Sequence>
+      </ReactiveSequence>
+   </BehaviorTree>
+</root>
