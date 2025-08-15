@@ -128,7 +128,7 @@ void Interface::compute_ball_position(RotMat<double>rotMatPelvisToGlobal,double 
         double y_T = homoMatBallToWorldAligned(1,3);
         double z_T = homoMatBallToWorldAligned(2,3);
         ball_range_selected = std::sqrt(x_T * x_T + y_T * y_T);
-
+        ball_pitchtorobot = asin(height / ball_range_selected);
         ballDetected_counter = 0;
         ballDetected = true;
     }   

@@ -424,6 +424,19 @@ public:
     }
 };
 
+class Adjust : public BT::SyncActionNode
+{
+public:
+    Adjust(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+        : BT::SyncActionNode(name, config), _interface(interface)
+    {}
+
+    BT::NodeStatus tick() override;
+
+private:
+    Interface* _interface;
+};
+
 // ===================== Goalie Nodes End =====================
 
 #endif

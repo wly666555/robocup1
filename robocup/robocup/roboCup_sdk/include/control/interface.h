@@ -97,6 +97,8 @@ public:
     AudioClient audioClient;
     xRockerBtnDataStruct keyData;
 
+
+
     std::unique_ptr<unitree::robot::RealTimePublisher<unitree_go::msg::dds_::MotorCmds_>> servoCmd;
     std::shared_ptr<unitree::robot::SubscriptionBase<unitree_go::msg::dds_::MotorStates_>> servoState;
     std::shared_ptr<unitree::robot::SubscriptionBase<unitree_hg::msg::dds_::LowState_>> lowState;
@@ -113,6 +115,8 @@ public:
     Vec2<double> ball_offset_fov;
     Vec2<double> ball_offset;
     double ball_range_selected;
+    double ball_pitchtorobot;
+    double height = 1.3;
 
     Vec2<double> ballPositionInPelvis;
     Vec2<double> ballPositionInField;

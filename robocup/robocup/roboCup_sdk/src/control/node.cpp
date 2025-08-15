@@ -423,8 +423,8 @@ BT::NodeStatus Adjust::tick()
     double dir_rb_f = robotBallAngleToField;
     double deltaDir = toPInPI(kickDir - dir_rb_f);
     double dir = deltaDir > 0 ? -1.0 : 1.0;
-    double ballRange = brain->data->ball.range;
-    double ballYaw = brain->data->ball.pitchToRobot;
+    double ballRange = ball_range_selected;
+    double ballYaw = ball_pitchtorobot;
 
 
     double s = 0.4;
