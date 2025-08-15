@@ -114,9 +114,16 @@ public:
     double ballYawToPelvis;
     Vec2<double> ball_offset_fov;
     Vec2<double> ball_offset;
+
+
     double ball_range_selected;
     double ball_pitchtorobot;
     double height = 1.3;
+    double robotpose2field_x;
+    double robotpose2field_y;
+    double robotpose2field_theta;
+    double robotBallAngleToField;
+
 
     Vec2<double> ballPositionInPelvis;
     Vec2<double> ballPositionInField;
@@ -130,7 +137,10 @@ public:
 
     bool trackDone = false;
     bool adjustDone = false;
+    Pose2D field2robot(const Pose2D &poseToField);
+    Pose2D robot2field(const Pose2D &poseToRobot);
 
+    vector<double> getGoalPostAngles();
 
 private:
     void init();

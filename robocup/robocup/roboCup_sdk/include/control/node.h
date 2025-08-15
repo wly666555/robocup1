@@ -35,7 +35,6 @@ using namespace unitree::robot::g1;
 #include <stdint.h>
 
 
-extern bool goal_wly ;
 
 
 template <typename T>
@@ -46,32 +45,7 @@ void registerNode(BT::BehaviorTreeFactory& factory, const std::string& id, Inter
     });
 }
 
-class camToPosition : public BT::SyncActionNode
-{
-public:
-    camToPosition(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
 
-    static BT::PortsList providedPorts()
-    {
-        return {
-            BT::InputPort<double>("joint0_angle", 0.0, "Joint 0 desired angle"),
-            BT::InputPort<double>("joint1_angle", 0.0, "Joint 1 desired angle"),
-            BT::InputPort<double>("duration", 500.0, "duration"),
-        };
-    }
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface *_interface;
-
-    float percent = 0;   
-    Vec2<float> initAngle;
-    Vec2<float> targetAngle;
-    bool firstRun = false;
-};
 
 
 using Vec2f = Eigen::Vector2f;
@@ -161,145 +135,94 @@ private:
 };
 
 
-class robotTrackPelvis : public BT::SyncActionNode
+
+class MoveToPoseOnField : public BT::SyncActionNode
 {
 public:
-    robotTrackPelvis(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+    MoveToPoseOnField(const std::string& name, const BT::NodeConfig& config, Interface* interface)
         : BT::SyncActionNode(name, config), _interface(interface)
     {}
 
+    static BT::PortsList providedPorts()
+    {
+        return {
+            InputPort<double>("x", 0, "目标 x 坐标, Field 坐标系"),
+            InputPort<double>("y", 0, "目标 y 坐标, Field 坐标系"),
+            InputPort<double>("theta", 0, "目标最终朝向, Field 坐标系"),
+            InputPort<double>("long_range_threshold", 1.5, "目标点的距离超过这个值时, 优先走过去, 而不是细调位置和方向"),
+            InputPort<double>("turn_threshold", 0.4, "长距离时, 目标点的方向超这个数值时, 先转向目标点"),
+            InputPort<double>("x_tolerance", 0.2, "x 容差"),
+            InputPort<double>("y_tolerance", 0.2, "y 容差"),
+            InputPort<double>("theta_tolerance", 0.1, "theta 容差"),
+        };
+    }
     BT::NodeStatus tick() override;
 
 private:
     Interface *_interface;
 };
 
-
-class BackToPosition : public BT::SyncActionNode
+class Chase : public BT::SyncActionNode
 {
 public:
-    BackToPosition(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+    Chase(const std::string& name, const BT::NodeConfig& config, Interface* interface)
         : BT::SyncActionNode(name, config), _interface(interface)
     {}
+
+    static PortsList providedPorts()
+    {
+        return {
+            InputPort<double>("dist", 1.0, "追球的目标是球后面多少距离"),
+        };
+    }
 
     BT::NodeStatus tick() override;
 
 private:
     Interface *_interface;
+
+    double _dir = 1.0;  //+为右
+
+    string _state;
 };
 
-class robotTrackField : public BT::SyncActionNode
-{
-public:
-    robotTrackField(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface *_interface;
-};
-
-class kick : public BT::SyncActionNode
+class kick : public BT::StatefulActionNode
 {
 public:
     kick(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
-   
-    BT::NodeStatus tick() override;
+        : BT::StatefulActionNode(name, config), _interface(interface){}
+    BT::NodeStatus onStart() override;
+    BT::NodeStatus onRunning() override;
+    void onHalted() override;
 
 private:
     Interface *_interface;
+    int _msecKick = 1000;
 
-    double counter = 0;
+    std::chrono::steady_clock::time_point _startTime;
 };
 
 
-class playerDecision : public BT::SyncActionNode
+class StrikerDecide : public BT::SyncActionNode
 {
 public:
-    playerDecision(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+    StrikerDecide(const std::string& name, const BT::NodeConfig& config, Interface* interface)
         : BT::SyncActionNode(name, config), _interface(interface)
     {}
     static BT::PortsList providedPorts()
-    {
-        return {
-            BT::OutputPort<std::string>("decision", "decision string")
-        };
-    }
-
-    BT::NodeStatus tick() override;
-private:
-    Interface *_interface;
-    bool goalSignal;
-};
-
-class test : public BT::SyncActionNode
-{
-public:
-    test(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
+        {
+            return {
+                InputPort<double>("chase_threshold", 1.0, "超过这个距离, 执行追球动作"),
+                InputPort<string>("decision_in", "", "用于读取上一次的 decision"),
+                OutputPort<string>("decision_out")};
+        }
 
     BT::NodeStatus tick() override;
 private:
     Interface *_interface;
 };
 
-class WristControl : public BT::SyncActionNode
-{
-public:
-    WristControl(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
 
-    static BT::PortsList providedPorts()
-    {
-        return {
-            BT::InputPort<double>("wrist_angle", 0.0, "Joint 0 desired angle"),
-        };
-    }
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface *_interface;
-
-    float _duration_1 = 1000;  
-    float _percent_1 = 0;   
-    bool hasSubWristState = false;
-    float init_angle;
-    float target_angle;
-    int counter = 0;
-    const int amplitude = 30; // Amplitude of the sine wave
-    const int frequency = 4; // Frequency of the sine wave
-
-    float weight = 0.f;
-    float kp = 60.f;
-    float kd = 1.5f;
-};
-
-class Speak : public BT::SyncActionNode
-{
-public:
-    Speak(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
-
-    static BT::PortsList providedPorts()
-    {
-        return {
-            BT::InputPort<std::string>("text", "Say this text")
-        };
-    }
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface *_interface;
-};
 
 class AbnormalCondition : public BT::SyncActionNode
 {
@@ -318,84 +241,23 @@ private:
 
 // ===================== Goalie Nodes Begin =====================
 
-class GoalieTrackBall : public BT::SyncActionNode
+
+class GoalieDecide : public BT::SyncActionNode
 {
 public:
-    GoalieTrackBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface* _interface;
-};
-
-class GoalieKickBall : public BT::SyncActionNode
-{
-public:
-    GoalieKickBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface* _interface;
-};
-
-class GoalieBackToHome : public BT::SyncActionNode
-{
-public:
-    GoalieBackToHome(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface* _interface;
-};
-
-class GoalieFindBall : public BT::SyncActionNode
-{
-public:
-    GoalieFindBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
-        : BT::SyncActionNode(name, config), _interface(interface)
-    {}
-
-    BT::NodeStatus tick() override;
-
-private:
-    Interface* _interface;
-    // 你用到的成员变量
-    bool firstRun = true;
-    Vec2f initAngle;
-    Vec2f targetAngle;
-    MultiStageInterpolator interpolator;
-    const std::vector<std::pair<Vec2f, float>> predefinedPhases = {
-        {Vec2f(0, 0),     200},
-        {Vec2f(35, -15),  500},
-        {Vec2f(35, 15),   500},
-        {Vec2f(-35, -15), 500},
-        {Vec2f(-35, 15),  500},
-        {Vec2f(0, 0),     500}
-    };
-};
-
-class GoalieDecision : public BT::SyncActionNode
-{
-public:
-    GoalieDecision(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+    GoalieDecide(const std::string& name, const BT::NodeConfig& config, Interface* interface)
         : BT::SyncActionNode(name, config), _interface(interface)
     {}
 
     static BT::PortsList providedPorts()
-    {
-        return {
-            BT::OutputPort<std::string>("decision", "decision string")
-        };
-    }
+        {
+            return {
+                InputPort<double>("chase_threshold", 1.0, "超过这个距离, 执行追球动作"),
+                InputPort<double>("adjust_angle_tolerance", 0.1, "小于这个角度, 认为 adjust 已经成功"),
+                InputPort<double>("adjust_y_tolerance", 0.1, "y 方向偏移小于这个值, 认为 y 方向 adjust 成功"),
+                InputPort<string>("decision_in", "", "用于读取上一次的 decision"),
+                OutputPort<string>("decision_out")};
+        }
 
     BT::NodeStatus tick() override;
 
@@ -403,26 +265,7 @@ private:
     Interface* _interface;
 };
 
-class CheckDecision : public BT::SyncActionNode
-{
-public:
-    CheckDecision(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::SyncActionNode(name, config) {}
 
-    static BT::PortsList providedPorts()
-    {
-        return { BT::InputPort<std::string>("expected"),
-                 BT::InputPort<std::string>("actual") };
-    }
-
-    BT::NodeStatus tick() override
-    {
-        std::string expected, actual;
-        getInput("expected", expected);
-        getInput("actual", actual);
-        return (expected == actual) ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
-    }
-};
 
 class Adjust : public BT::SyncActionNode
 {
@@ -437,6 +280,21 @@ private:
     Interface* _interface;
 };
 
+class RobotFindBall : public BT::StatefulActionNode
+{
+public:
+    RobotFindBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+        : BT::StatefulActionNode(name, config), _interface(interface){}
+   
+    BT::NodeStatus onStart() override;
+    BT::NodeStatus onRunning() override;
+    void onHalted() override;
+
+private:
+    Interface *_interface;
+
+    double turn_dir;
+};
 // ===================== Goalie Nodes End =====================
 
 #endif

@@ -1,6 +1,6 @@
 field_size: kid
 playerStartPos: left
-location_mode: normal
+location_mode: enter_field
 
 servo:
   pitch_compensation: -45

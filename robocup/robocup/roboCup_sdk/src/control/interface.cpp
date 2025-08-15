@@ -49,8 +49,9 @@ void Interface::init()
 void Interface::lowStateHandle()
 {
     homoMatPelvisToField = homoMatrix(rotMat2D(locateResult->msg_.robot2field_theta()),Vec2<double>(locateResult->msg_.robot2field_x(),locateResult->msg_.robot2field_y()));
-    
-
+    robotpose2field_x = homoMatPelvisToField(0,2);
+    robotpose2field_y = homoMatPelvisToField(1,2);
+    robotpose2field_theta = homoMatPelvisToField(2,2);
     ballDetected_counter++;
     memcpy(&keyData, &lowState->msg_.wireless_remote()[0], 40);    
     Quat<double> quat;
@@ -131,5 +132,48 @@ void Interface::compute_ball_position(RotMat<double>rotMatPelvisToGlobal,double 
         ball_pitchtorobot = asin(height / ball_range_selected);
         ballDetected_counter = 0;
         ballDetected = true;
+        robotBallAngleToField = atan2(ballPositionInField[1] - robotpose2field_y; ballPositionInField[0] - robotpose2field_x);
     }   
+}
+
+
+Pose2D Interface::robot2field(const Pose2D &poseToRobot)
+{
+    Pose2D poseToField;
+    transCoord(
+        poseToRobot.x, poseToRobot.y, poseToRobot.theta,
+        robotpose2field_x, robotpose2field_y, robotpose2field_theta,
+        poseToField.x, poseToField.y, poseToField.theta);
+    poseToField.theta = toPInPI(poseToField.theta);
+    return poseToField;
+}
+
+Pose2D Interface::field2robot(const Pose2D &poseToField)
+{
+    Pose2D poseToRobot;
+    double xfr, yfr, thetafr; // fr = field to robot
+    yfr = sin(robotpose2field_theta) * robotpose2field_x - cos(robotpose2field_theta) * robotpose2field_y;
+    xfr = -cos(robotpose2field_theta) * robotpose2field_x- sin(robotpose2field_theta) * robotpose2field_y;
+    thetafr = -robotpose2field_theta;
+    transCoord(
+        poseToField.x, poseToField.y, poseToField.theta,
+        xfr, yfr, thetafr,
+        poseToRobot.x, poseToRobot.y, poseToRobot.theta);
+    return poseToRobot;
+}
+
+vector<double> Interface::getGoalPostAngles()
+{
+    double leftX, leftY, rightX, rightY; // 球门柱在球场中的坐标
+    double margin = 0.3;
+    leftX = 4.5;
+    leftY = 1.3;
+    rightX = 4.5;
+    rightY = -1.3;
+
+    const double theta_l = atan2(leftY - margin - _interface->ballPositionInField[1], leftX - _interface->ballPositionInField[0]);
+    const double theta_r = atan2(rightY + margin - _interface->ballPositionInField[1], rightX - _interface->ballPositionInField[0]);
+
+    vector<double> vec = {theta_l, theta_r};
+    return vec;
 }
