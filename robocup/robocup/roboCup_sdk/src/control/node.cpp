@@ -2,6 +2,7 @@
 
 #include <thread>  // 添加该头文件
 #include <chrono>  // 添加该头文件
+#include <string>  // 添加该头文件
 
 
 BT::NodeStatus camFindBall::tick()
@@ -121,7 +122,8 @@ BT::NodeStatus MoveToPoseOnField::tick()
 
 BT::NodeStatus Adjust::tick()
 {
-    if(!tree->getEntry<bool>("ball_location_known"))
+    bool ball_location_known;
+    if(!getInput("ball_location_known", ball_location_known) || !ball_location_known)
     {
         return BT::NodeStatus::SUCCESS; 
     }
@@ -158,7 +160,8 @@ BT::NodeStatus Adjust::tick()
 
 BT::NodeStatus Chase::tick()
 {
-   if(!brain->tree->getEntry<bool>("ball_location_known"))
+   bool ball_location_known;
+   if(!getInput("ball_location_known", ball_location_known) || !ball_location_known)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS; 
@@ -218,7 +221,7 @@ BT::NodeStatus Chase::tick()
 }
 
 
-BT::NodeStatus Kick::onStart()
+BT::NodeStatus kick::onStart()
 {
     _startTime = std::chrono::steady_clock::now(); // 获取当前时间点作为开始时间
 
@@ -255,7 +258,7 @@ BT::NodeStatus Kick::onStart()
     return BT::NodeStatus::SUCCESS;
 }
 
-BT::NodeStatus Kick::onRunning()
+BT::NodeStatus kick::onRunning()
 {
     // 计算从 _startTime 到现在的时间差
     auto elapsed_time = std::chrono::steady_clock::now() - _startTime;
@@ -271,7 +274,7 @@ BT::NodeStatus Kick::onRunning()
     return BT::NodeStatus::SUCCESS;
 }
 
-void Kick::onHalted()
+void kick::onHalted()
 {
     // 修改开始时间 `_startTime`，可以用负偏移模仿提前结束的效果
     _startTime -= std::chrono::milliseconds(100); // 让启动时间向前调整 100ms
@@ -323,7 +326,8 @@ BT::NodeStatus StrikerDecide::tick()
     string newDecision;
 
 
-    if (!brain->tree->getEntry<bool>("ball_location_known"))
+    bool ball_location_known;
+    if (!getInput("ball_location_known", ball_location_known) || !ball_location_known)
     {
         newDecision = "find";
     }
@@ -342,7 +346,7 @@ BT::NodeStatus StrikerDecide::tick()
 
     setOutput("decision_out", newDecision);
 
-    return NodeStatus::SUCCESS;
+    return BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus GoalieDecide::tick()
@@ -366,11 +370,12 @@ BT::NodeStatus GoalieDecide::tick()
     string newDecision;
 
 
-    if (!brain->tree->getEntry<bool>("ball_location_known"))
+    bool ball_location_known;
+    if (!getInput("ball_location_known", ball_location_known) || !ball_location_known)
     {
         newDecision = "find";
     }
-    else if (brain->data->ball.posToField.x > 0 - static_cast<double>(lastDecision == "gohome"))
+    else if (_interface->ballPositionInField[0] > 0 - static_cast<double>(lastDecision == "gohome"))
     {
         newDecision = "gohome";
     }
@@ -389,13 +394,13 @@ BT::NodeStatus GoalieDecide::tick()
 
     setOutput("decision_out", newDecision);
     
-    return NodeStatus::SUCCESS;
+    return BT::NodeStatus::SUCCESS;
 }
 
 
 BT::NodeStatus RobotFindBall::onStart()
 {
-    if(brain->data->ballDetected)
+    if(_interface->ballDetected)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
@@ -406,9 +411,9 @@ BT::NodeStatus RobotFindBall::onStart()
 }
 BT::NodeStatus RobotFindBall::onRunning()
 {
-    if(brain->data->ballDetected)
+    if(_interface->ballDetected)
     {
-        brain->client->Move(0,0,0);
+        _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
     }
     double vyawLimit = 1.0;

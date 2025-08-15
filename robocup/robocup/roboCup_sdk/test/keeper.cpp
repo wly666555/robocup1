@@ -27,6 +27,8 @@ int main(int argc, char const *argv[])
   // 设置黑板默认值
   auto blackboard = tree.blackboard(); // 黑板指针
   blackboard->setEntry<bool>("ball_location_known", false);
+  blackboard->setEntry<std::string>("decision", "");
+  blackboard->setEntry<string>("player_role", brain->config->playerRole);
   
   while(true)
   {
