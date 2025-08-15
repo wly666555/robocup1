@@ -17,6 +17,7 @@
 #include "common/mathTools.h"
 #include "common/DetectionModule.hpp"
 #include "common/LocationModule.hpp"
+#include "common/SignalModule.hpp"
 #include <cmath> 
 
 using namespace unitree::common;
@@ -108,6 +109,7 @@ public:
     std::shared_ptr<unitree::robot::SubscriptionBase<unitree_hg::msg::dds_::LowState_>> armState;
     std::unique_ptr<unitree::robot::RealTimePublisher<unitree_hg::msg::dds_::LowCmd_>> armCmd;
     std::shared_ptr<unitree::robot::SubscriptionBase<LocationModule::LocationResult>> locateResult;
+    std::shared_ptr<unitree::robot::SubscriptionBase<SignalModule::LocationSignal>> locateSignal;
 
     RotMat<double> rotMatPelvisToGlobal, rotMatGlobalToPelvis;
     bool ballDetected;

@@ -58,8 +58,8 @@ int main(int argc, char *argv[])
     // Create Location Publisher
     std::unique_ptr<unitree::robot::RealTimePublisher<LocationModule::LocationResult>> posePub; 
     posePub = std::make_unique<unitree::robot::RealTimePublisher<LocationModule::LocationResult>>("rt/locationresults");
-    std::unique_ptr<unitree::robot::RealTimePublisher<LocationModule::LocationResult>> signalPub;
-    signalPub = std::make_unique<unitree::robot::RealTimePublisher<LocationModule::LocationResult>>("rt/locationsignal");
+    std::unique_ptr<unitree::robot::RealTimePublisher<SignalModule::LocationSignal>> signalPub;
+    signalPub = std::make_unique<unitree::robot::RealTimePublisher<SignalModule::LocationSignal>>("rt/locationsignals");
 
 
     // Load config file

@@ -37,7 +37,9 @@ void Interface::init()
     detection = std::make_shared<unitree::robot::SubscriptionBase<DetectionModule::DetectionResults>>("detectionresults");
     odomState = std::make_shared<unitree::robot::SubscriptionBase<unitree_go::msg::dds_::SportModeState_>>("rt/odommodestate");
     locateResult = std::make_shared<unitree::robot::SubscriptionBase<LocationModule::LocationResult>>("rt/locationresults");
+    locateSignal = std::make_shared<unitree::robot::SubscriptionBase<SignalModule::LocationSignal>>("rt/locationsignals");
     lowStateThreadPtr = CreateRecurrentThreadEx("lowStateHandle", UT_CPU_ID_NONE, 2000, &Interface::lowStateHandle, this); // 500 hz
+
 
     sleep(1); // todo
 
