@@ -123,7 +123,7 @@ BT::NodeStatus MoveToPoseOnField::tick()
 BT::NodeStatus Adjust::tick()
 {
     bool ball_location_known;
-    if(!getInput("ball_location_known", ball_location_known) || !ball_location_known)
+    if(!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         return BT::NodeStatus::SUCCESS; 
     }
@@ -161,7 +161,7 @@ BT::NodeStatus Adjust::tick()
 BT::NodeStatus Chase::tick()
 {
    bool ball_location_known;
-   if(!getInput("ball_location_known", ball_location_known) || !ball_location_known)
+   if(!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS; 
@@ -311,7 +311,9 @@ BT::NodeStatus StrikerDecide::tick()
     double chaseRangeThreshold;
     getInput("chase_threshold", chaseRangeThreshold);
     string lastDecision ;
-    getInput("decision_in", lastDecision);
+    getEntry("decision_in", lastDecision);
+    string playerRole;
+    getEntry("player_role", playerRole);
 
 
     double kickDir = atan2(-_interface->ballPositionInField[0], 4.5 - _interface->ballPositionInField[0]);
@@ -327,7 +329,7 @@ BT::NodeStatus StrikerDecide::tick()
 
 
     bool ball_location_known;
-    if (!getInput("ball_location_known", ball_location_known) || !ball_location_known)
+    if (!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         newDecision = "find";
     }
@@ -355,7 +357,9 @@ BT::NodeStatus GoalieDecide::tick()
     double chaseRangeThreshold;
     getInput("chase_threshold", chaseRangeThreshold);
     string lastDecision, position;
-    getInput("decision_in", lastDecision);
+    getEntry("decision_in", lastDecision);
+    string playerRole;
+    getEntry("player_role", playerRole);
 
 
     double kickDir = atan2(-_interface->ballPositionInField[0], 4.5 - _interface->ballPositionInField[0]);
@@ -371,7 +375,7 @@ BT::NodeStatus GoalieDecide::tick()
 
 
     bool ball_location_known;
-    if (!getInput("ball_location_known", ball_location_known) || !ball_location_known)
+    if (!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         newDecision = "find";
     }
