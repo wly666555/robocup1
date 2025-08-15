@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+cee76d67633aba18d34c2a9852f0bb59 CMakeFiles/football_detect.dir/src/football_detect_generated_preprocess.cu.o

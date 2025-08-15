@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/test_subscribe_location.dir/src/LocationModule.cpp.o CMakeFiles/test_subscribe_location.dir/test_subscribe_location.cpp.o  -o test_subscribe_location   -L/usr/local/lib  -Wl,-rpath,/usr/local/lib /usr/local/lib/libunitree_sdk2.a -lddsc -lddscxx -lpthread 
