@@ -1,13 +1,13 @@
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
-          <ReactiveSequence _while="control_state==2"  name="locate">
-              <CamFindBall  _while="!odom_calibrated"/>
+          <ReactiveSequence _while="!odom_calibrated"  name="locate">
+              <CamFindBall />
               <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
               <SelfLocate mode="enter_field" />
           </ReactiveSequence>
 
-          <ReactiveSequence _while="odom_calibrated" name="/定位成功">
+          <ReactiveSequence _while="player_role=="striker"" name="/比赛">
             <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
             <Sequence>
                   <StrikerDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.2" />
