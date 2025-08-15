@@ -7,8 +7,8 @@
 
 BT::NodeStatus camFindBall::tick()
 {
-
-    if (!_interface->ballDetected)
+    bool ball_location_known;
+    if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         if (firstRun)
         {
@@ -34,7 +34,7 @@ BT::NodeStatus camFindBall::tick()
         interpolator = MultiStageInterpolator();
         return BT::NodeStatus::SUCCESS;
     }
-    if(!_interface->ballDetected && !firstRun){
+    if(!ball_location_known && !firstRun){
         _interface->locoClient.Move(0, 0, 1);
     }
     // 限位角度：单位是弧度（45度 = π/4）
@@ -123,7 +123,7 @@ BT::NodeStatus MoveToPoseOnField::tick()
 BT::NodeStatus Adjust::tick()
 {
     bool ball_location_known;
-    if(!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         return BT::NodeStatus::SUCCESS; 
     }
@@ -161,7 +161,7 @@ BT::NodeStatus Adjust::tick()
 BT::NodeStatus Chase::tick()
 {
    bool ball_location_known;
-   if(!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+   if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS; 
@@ -283,7 +283,8 @@ void kick::onHalted()
 
 BT::NodeStatus camTrackBall::tick()
 {
-    if (!_interface->ballDetected)
+    bool ball_location_known;
+    if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         return BT::NodeStatus::SUCCESS;
     }
@@ -311,9 +312,9 @@ BT::NodeStatus StrikerDecide::tick()
     double chaseRangeThreshold;
     getInput("chase_threshold", chaseRangeThreshold);
     string lastDecision ;
-    getEntry("decision_in", lastDecision);
+    getInput("decision_in", lastDecision);
     string playerRole;
-    getEntry("player_role", playerRole);
+    config().blackboard->getEntry("player_role", playerRole);
 
 
     double kickDir = atan2(-_interface->ballPositionInField[0], 4.5 - _interface->ballPositionInField[0]);
@@ -329,7 +330,7 @@ BT::NodeStatus StrikerDecide::tick()
 
 
     bool ball_location_known;
-    if (!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    if (!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         newDecision = "find";
     }
@@ -357,9 +358,9 @@ BT::NodeStatus GoalieDecide::tick()
     double chaseRangeThreshold;
     getInput("chase_threshold", chaseRangeThreshold);
     string lastDecision, position;
-    getEntry("decision_in", lastDecision);
+    getInput("decision_in", lastDecision);
     string playerRole;
-    getEntry("player_role", playerRole);
+    config().blackboard->getEntry("player_role", playerRole);
 
 
     double kickDir = atan2(-_interface->ballPositionInField[0], 4.5 - _interface->ballPositionInField[0]);
@@ -375,7 +376,7 @@ BT::NodeStatus GoalieDecide::tick()
 
 
     bool ball_location_known;
-    if (!getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    if (!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
     {
         newDecision = "find";
     }
@@ -404,7 +405,8 @@ BT::NodeStatus GoalieDecide::tick()
 
 BT::NodeStatus RobotFindBall::onStart()
 {
-    if(_interface->ballDetected)
+    bool ball_location_known;
+    if(config().blackboard->getEntry("ball_location_known", ball_location_known) && ball_location_known)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
@@ -415,7 +417,8 @@ BT::NodeStatus RobotFindBall::onStart()
 }
 BT::NodeStatus RobotFindBall::onRunning()
 {
-    if(_interface->ballDetected)
+    bool ball_location_known;
+    if(config().blackboard->getEntry("ball_location_known", ball_location_known) && ball_location_known)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
@@ -432,8 +435,6 @@ void RobotFindBall::onHalted()
 {
     turn_dir = 1.0;
 }
-
-
 
 
 
