@@ -1,6 +1,7 @@
 #include "control/interface.h"
 
-Interface::Interface()
+Interface::Interface(std::shared_ptr<BT::Blackboard> blackboard)
+    : blackboard_(blackboard)
 {
     init();
 }
@@ -90,6 +91,8 @@ void Interface::lowStateHandle()
     if(ballDetected_counter >= 150)
     {
         ballDetected = false;
+        blackboard_->setEntry<bool>("ball_location_known", false); 
+
     }
 
 }
@@ -134,6 +137,7 @@ void Interface::compute_ball_position(RotMat<double>rotMatPelvisToGlobal,double 
         ball_pitchtorobot = asin(height / ball_range_selected);
         ballDetected_counter = 0;
         ballDetected = true;
+        blackboard_->setEntry<bool>("ball_location_known", true); // 设置黑板中的变量
         robotBallAngleToField = atan2(ballPositionInField[1] - robotpose2field_y; ballPositionInField[0] - robotpose2field_x);
     }   
 }

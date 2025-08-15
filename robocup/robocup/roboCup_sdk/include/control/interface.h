@@ -91,7 +91,7 @@ private:
 class Interface
 {
 public:
-    Interface();
+    Interface(std::shared_ptr<BT::Blackboard> blackboard);
     ~Interface();
 
     LocoClient locoClient;
@@ -152,7 +152,7 @@ private:
     double pitch_angle_add;
     
     void compute_ball_position(RotMat<double>rotMatPelvisToGlobal,double waist_yaw_q, double servo0_q, double servo1_q, Vec3<double> ball_position_in_cam);
-
+    std::shared_ptr<BT::Blackboard> blackboard_;
     double ballDetected_counter;
 };
 

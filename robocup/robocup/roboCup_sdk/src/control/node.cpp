@@ -4,11 +4,11 @@
 #include <chrono>  // 添加该头文件
 #include <string>  // 添加该头文件
 
+using namespace BT;
 
 BT::NodeStatus camFindBall::tick()
 {
-    bool ball_location_known;
-    if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    if(!_interface->ballDetected)
     {
         if (firstRun)
         {
@@ -27,15 +27,13 @@ BT::NodeStatus camFindBall::tick()
             }
             firstRun = false;
         }
+
     }
     else
     {
         firstRun = true;
         interpolator = MultiStageInterpolator();
         return BT::NodeStatus::SUCCESS;
-    }
-    if(!ball_location_known && !firstRun){
-        _interface->locoClient.Move(0, 0, 1);
     }
     // 限位角度：单位是弧度（45度 = π/4）
     constexpr float Y_SERVO_MIN = -M_PI / 3.0f; // 最小俯视角
@@ -120,10 +118,22 @@ BT::NodeStatus MoveToPoseOnField::tick()
 }
 
 
+BT::NodeStatus SetVelocity::tick()
+{
+    double x, y, theta;
+    getInput("x", x);
+    getInput("y", y);
+    getInput("theta", theta);
+
+    _interface->locoClient->Move(x,y,theta);
+    return BT::NodeStatus::SUCCESS;
+}
+
 BT::NodeStatus Adjust::tick()
 {
     bool ball_location_known;
-    if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    config().blackboard->getEntry("ball_location_known", ball_location_known); // 获取黑板中的值
+    if(!ball_location_known)
     {
         return BT::NodeStatus::SUCCESS; 
     }
@@ -160,8 +170,9 @@ BT::NodeStatus Adjust::tick()
 
 BT::NodeStatus Chase::tick()
 {
-   bool ball_location_known;
-   if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    bool ball_location_known;
+    config().blackboard->getEntry("ball_location_known", ball_location_known); // 获取黑板中的值
+    if(!ball_location_known)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS; 
@@ -283,8 +294,7 @@ void kick::onHalted()
 
 BT::NodeStatus camTrackBall::tick()
 {
-    bool ball_location_known;
-    if(!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    if(!_interface->ballDetected)
     {
         return BT::NodeStatus::SUCCESS;
     }
@@ -330,7 +340,8 @@ BT::NodeStatus StrikerDecide::tick()
 
 
     bool ball_location_known;
-    if (!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    config().blackboard->getEntry("ball_location_known", ball_location_known); // 获取黑板中的值
+    if(!ball_location_known)
     {
         newDecision = "find";
     }
@@ -376,7 +387,8 @@ BT::NodeStatus GoalieDecide::tick()
 
 
     bool ball_location_known;
-    if (!config().blackboard->getEntry("ball_location_known", ball_location_known) || !ball_location_known)
+    config().blackboard->getEntry("ball_location_known", ball_location_known); // 获取黑板中的值
+    if(!ball_location_known)
     {
         newDecision = "find";
     }
@@ -405,8 +417,7 @@ BT::NodeStatus GoalieDecide::tick()
 
 BT::NodeStatus RobotFindBall::onStart()
 {
-    bool ball_location_known;
-    if(config().blackboard->getEntry("ball_location_known", ball_location_known) && ball_location_known)
+    if(_interface->ballDetected)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
@@ -417,8 +428,7 @@ BT::NodeStatus RobotFindBall::onStart()
 }
 BT::NodeStatus RobotFindBall::onRunning()
 {
-    bool ball_location_known;
-    if(config().blackboard->getEntry("ball_location_known", ball_location_known) && ball_location_known)
+    if(_interface->ballDetected)
     {
         _interface->locoClient->Move(0,0,0);
         return BT::NodeStatus::SUCCESS;

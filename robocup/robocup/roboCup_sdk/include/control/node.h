@@ -280,6 +280,27 @@ private:
     Interface* _interface;
 };
 
+class setvelocity : public BT::SyncActionNode
+{
+public:
+    setvelocity(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+        : BT::SyncActionNode(name, config), _interface(interface)
+    {}
+    static PortsList providedPorts()
+    {
+        return {
+            InputPort<double>("x", 0, "Default x is 0"),
+            InputPort<double>("y", 0, "Default y is 0"),
+            InputPort<double>("theta", 0, "Default  theta is 0"),
+        };
+    }
+
+    BT::NodeStatus tick() override;
+
+private:
+    Interface* _interface;
+};
+
 class RobotFindBall : public BT::StatefulActionNode
 {
 public:
