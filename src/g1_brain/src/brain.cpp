@@ -241,7 +241,7 @@ void G1Brain::odomCallback(const std::shared_ptr<unitree_go::msg::SportModeState
 
 
 void G1Brain::lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowState> msg) {
-    data-> waist_yaw_angle = rad2deg(msg->motor_state[JointIndex::kWaistYaw].states[0].q);
+    data-> waist_yaw_angle = rad2deg(msg->motor_state[JointIndex::kWaistYaw].states[0].q);  //是否为弧度？
 
     data->cur_imu.quaternion [0]= msg->imu_state.quaternion[0];
     data->cur_imu.quaternion [1]= msg->imu_state.quaternion[1];
@@ -269,6 +269,10 @@ void G1Brain::servoStatesCallback(const std::shared_ptr<robot_interfaces::msg::M
 
 
 void G1Brain::detectionsCallback(const std::shared_ptr<robot_interfaces::msg::DetectionResults> msg) {
+
+    //确定servo height 的数值
+    p_eye2base = Pose(0,-config->servo_height,0,data->headPitch, -deg2rad(data->waist_yaw_angle) - data->headYaw, 0);
+
     // 1. 解析检测结果
     auto gameObjects = getGameObjects(msg->results, p_eye2base, data->robotPoseToField);
     // 2. 分类处理

@@ -36,6 +36,7 @@ public:
     double yaw_compensation;
     double height;
     double scale_factor;
+    double servo_height;
 
     // Head servo soft limits (degrees)
     double yaw_limit_min;
