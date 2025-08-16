@@ -62,6 +62,10 @@ void G1Brain::init() {
         "/lowstate", 10,std::bind(&G1Brain::lowstateCallback, this, std::placeholders::_1));
 
     // pose_pub_ = this->create_publisher<geometry_msgs::msg::Pose2D>("robot_pose", 10);
+
+    joystick_sub_ = this->create_subscription<unitree_go::msg::WirelessController>(
+        "/wirelesscontroller", 10,std::bind(&G1Brain::joystickCallback, this, std::placeholders::_1));
+
     RCLCPP_INFO(this->get_logger(), "G1Brain initialized");
 }
 
@@ -95,9 +99,6 @@ void G1Brain::loadConfig() {
     RCLCPP_INFO(this->get_logger(), "game.field_type loaded: %s", config->playerStartPos.c_str());
     RCLCPP_INFO(this->get_logger(), "tree_file_path: %s", config->treeFilePath.c_str());
 
-    
-    odometry_factor_ = config->scale_factor;
-    servo_height_ = config->height;
     config->handle();
 
     RCLCPP_INFO(this->get_logger(), "Configuration loaded");
@@ -205,8 +206,8 @@ vector<double> G1Brain::getGoalPostAngles(const double margin)
 
 void G1Brain::odomCallback(const std::shared_ptr<unitree_go::msg::SportModeState> msg) {
     // 位置
-    data->robotPoseToOdom.x = msg->position[0] * odometry_factor_;
-    data->robotPoseToOdom.y = msg->position[1] * odometry_factor_;
+    data->robotPoseToOdom.x = msg->position[0] * config->scale_factor;
+    data->robotPoseToOdom.y = msg->position[1] * config->scale_factor;
 
     // 四元数（从IMUState里取）
     double qw = msg->imu_state.quaternion[0];
@@ -262,11 +263,38 @@ void G1Brain::servoStatesCallback(const std::shared_ptr<robot_interfaces::msg::M
 }
 
 
+void G1Brain::joystickCallback(const std::shared_ptr<unitree_go::msg::WirelessController> msg){
+
+    RCLCPP_INFO(this->get_logger(), "Wireless controller -- lx: %f; ly: %f; rx: %f; ry: %f; key value: %d",msg->lx, msg->ly, msg->rx, msg->ry, msg->keys);
+
+    uint16_t keys = msg->keys;
+
+
+    if (keys & 4096) { // 4096 (0x1000) 表示 Up 按钮被按下
+        if (keys & 2048) { 
+            RCLCPP_INFO(this->get_logger(), "Up and Y buttons state1");
+        }
+
+        if (keys & 1024) { 
+            RCLCPP_INFO(this->get_logger(), "Up and X buttons state2");
+        }
+
+        if (keys & 256) { 
+            RCLCPP_INFO(this->get_logger(), "Up and A buttons state3");
+        }
+
+        if (keys & 512) { 
+            RCLCPP_INFO(this->get_logger(), "Up and B buttons state4");
+        }
+    }
+
+}
+
 
 void G1Brain::detectionsCallback(const std::shared_ptr<robot_interfaces::msg::DetectionResults> msg) {
 
     //确定servo height 的数值
-    p_eye2base = Pose(0,-config->servo_height,0,data->headPitch, -deg2rad(data->waist_yaw_angle) - data->headYaw, 0);
+    p_eye2base = Pose(0, -config->height , 0 , data->headPitch , -deg2rad(data->waist_yaw_angle) - data->headYaw, 0);
 
     // 1. 解析检测结果
     auto gameObjects = getGameObjects(msg->results, p_eye2base, data->robotPoseToField);

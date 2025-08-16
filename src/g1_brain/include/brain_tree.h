@@ -108,7 +108,7 @@ public:
             // trust_nothing: 极限情况，认为 x,y 也不可信，需要先通过标志物辨别方向。
             // face_forward: 面向对方球门的方向, 主要用于测试
         };
-    };
+    }
 
 private:
     G1Brain* brain;
@@ -231,7 +231,8 @@ public:
         return {
             InputPort<double>("chase_threshold", 1.0, "超过这个距离, 执行追球动作"),
             InputPort<string>("decision_in", "", "用于读取上一次的 decision"),
-            OutputPort<string>("decision_out")};
+            OutputPort<string>("decision_out")
+        };
     }
 
     BT::NodeStatus tick() override;
@@ -252,7 +253,8 @@ public:
             InputPort<double>("adjust_angle_tolerance", 0.1, "小于这个角度, 认为 adjust 已经成功"),
             InputPort<double>("adjust_y_tolerance", 0.1, "y 方向偏移小于这个值, 认为 y 方向 adjust 成功"),
             InputPort<string>("decision_in", "", "用于读取上一次的 decision"),
-            OutputPort<string>("decision_out")};
+            OutputPort<string>("decision_out")
+        };
     }
 
     BT::NodeStatus tick() override;
@@ -277,7 +279,8 @@ public:
             InputPort<double>("y_tolerance", 0.2, "y 容差"),
             InputPort<double>("theta_tolerance", 0.1, "theta 容差"),
         };
-
+    }
+    
     BT::NodeStatus tick() override;
 
 private:

@@ -14,8 +14,10 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include "unitree_go/msg/sport_mode_state.hpp"
 #include "robot_interfaces/msg/low_state.hpp"
+#include "unitree_go/msg/wireless_controller.hpp"
 #include "locate/yaml_parser.h"
 #include "locate/pose.h"
+
 // 添加roboCup_sdk依赖
 #include "brain_config.h"
 #include "brain_data.h"
@@ -73,10 +75,6 @@ public:
     Pose p_eye2base;
     
 private:
-    
-    // 成员变量
-    double odometry_factor_;
-    double servo_height_{0.0};
 
 
     void loadConfig();
@@ -94,7 +92,7 @@ private:
     void detectionsCallback(const std::shared_ptr<robot_interfaces::msg::DetectionResults> msg);
     void odomCallback(const std::shared_ptr<unitree_go::msg::SportModeState> msg);
     void lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowState> msg);
-    
+    void joystickCallback(const std::shared_ptr<unitree_go::msg::WirelessController> msg);
 
     // 检测处理 
     robot_interfaces::msg::MotorState motor_state;
@@ -118,6 +116,7 @@ private:
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr odom_sub_;
     rclcpp::Subscription<robot_interfaces::msg::LowState>::SharedPtr lowstate_sub_;
     rclcpp::Subscription<robot_interfaces::msg::MotorStates>::SharedPtr servo_states_sub_;
+    rclcpp::Subscription<unitree_go::msg::WirelessController>::SharedPtr joystick_sub_;
 
     // 发布者
     // rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pose_pub_;
