@@ -34,14 +34,44 @@ class G1Brain; // 类相互依赖，向前声明
 class RobotClient {
 public:
     RobotClient(G1Brain* argBrain) : brain(argBrain) {}
-    void Move(float vx, float vy, float vyaw);
     void init();
     void moveHead(double pitch, double yaw);
-    void StandUp();
-    void ProcessCommand(const std::string &command, const std::vector<float> &params);
+
+    int32_t Move(float vx, float vy, float vyaw) 
+    {
+        return Move(vx, vy, vyaw, continous_move_);
+    }
 
     int moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance);
     
+    int32_t SetFsmId(int fsm_id) 
+    {
+        unitree_api::msg::Request req;
+        req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_FSM_ID;
+        nlohmann::json js;
+        js["data"] = fsm_id;
+        req.parameter = js.dump();
+        return base_client_.Call(req);
+    }
+    int32_t SetVelocity(float vx, float vy, float omega, float duration = 1.F) 
+    {
+        unitree_api::msg::Request req;
+        req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY;
+        nlohmann::json js;
+        std::vector<float> velocity = {vx, vy, omega};
+        js["velocity"] = velocity;
+        js["duration"] = duration;
+        req.parameter = js.dump();
+        return base_client_.Call(req);
+    }
+    int32_t StandUp() 
+    { 
+        return SetFsmId(4); 
+    }
+    int32_t Move(float vx, float vy, float vyaw, bool continous_move) 
+    {
+        return SetVelocity(vx, vy, vyaw, continous_move ? 864000.F : 1.F);
+    }    
 
 private:
 
@@ -51,6 +81,7 @@ private:
     rclcpp::Subscription<unitree_api::msg::Response>::SharedPtr req_suber_;
 
     G1Brain *brain;
+    bool continous_move_ = false;
 
 };
 

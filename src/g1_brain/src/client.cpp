@@ -55,42 +55,6 @@ void RobotClient::moveHead(double pitch, double yaw) {
     cmd_puber_->publish(motor_cmds);
 }
 
-void RobotClient::StandUp() {
-    unitree_api::msg::Request req;
-    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_FSM_ID; // 使用正确的 API ID
-    nlohmann::json js;
-    js["data"] = 4; // 4 是站立的 FSM ID
-    req.parameter = js.dump();
-    return base_client_.Call(req);
-}
-
-void RobotClient::Move(float vx, float vy, float vyaw) {
-    unitree_api::msg::Request req;
-    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY; // 使用正确的 API ID
-    nlohmann::json js;
-    js["velocity"] = {vx, vy, vyaw};
-    req.parameter = js.dump();
-    return base_client_.Call(req);
-}
-
-void RobotClient::ProcessCommand(const std::string &command, const std::vector<float> &params) {
-    if (command == "move" && params.size() == 3) {
-        float vx = params[0];
-        float vy = params[1];
-        float vyaw = params[2];
-        int32_t result = Move(vx, vy, vyaw);
-        if (result != UT_ROBOT_SUCCESS) {
-            std::cerr << "Move command failed with error code: " << result << std::endl;
-        }
-    } else if (command == "stand_up") {
-        int32_t result = StandUp();
-        if (result != UT_ROBOT_SUCCESS) {
-            std::cerr << "StandUp command failed with error code: " << result << std::endl;
-        }
-    } else {
-        std::cerr << "Invalid command or parameters." << std::endl;
-    }
-}
 
 
 int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance)
