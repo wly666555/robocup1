@@ -299,3 +299,14 @@ private:
     G1Brain *brain;
     double turn_dir;
 };
+
+class CamScanField : public BT::SyncActionNode {
+public:
+    CamScanField(const string &name, const NodeConfig &config, G1Brain *_brain) 
+        : SyncActionNode(name, config), brain(_brain) {}
+    
+    BT::NodeStatus tick() override;
+
+private:
+    G1Brain *brain;
+};

@@ -29,6 +29,7 @@ void BrainTree::init()
     REGISTER_BUILDER(SetVelocity)
     REGISTER_BUILDER(RobotFindBall)
     REGISTER_BUILDER(MoveToPoseOnField)
+    REGISTER_BUILDER(CamScanField)
     
 
     factory.registerBehaviorTreeFromFile(brain->config->treeFilePath);
@@ -60,6 +61,26 @@ void BrainTree::tick()
 }
 
 // =================== 节点实现 ===================
+
+BT::NodeStatus CamScanField::tick()
+{
+    auto sec = brain->get_clock()->now().seconds();
+    auto msec = static_cast<unsigned long long>(sec * 1000);
+    double lowPitch = -0.3;
+    double highPitch = 0.6;
+    double leftYaw = 0.85;
+    double rightYaw = -0.85;
+    
+    // 写死扫描周期为 3000ms
+    int msecCycle = 3000;
+
+    int cycleTime = msec % msecCycle;
+    double pitch = cycleTime > (msecCycle / 2.0) ? lowPitch : highPitch;
+    double yaw = cycleTime < (msecCycle / 2.0) ? (leftYaw - rightYaw) * (2.0 * cycleTime / msecCycle) + rightYaw : (leftYaw - rightYaw) * (2.0 * (msecCycle - cycleTime) / msecCycle) + rightYaw;
+
+    brain->client->moveHead(pitch, yaw);
+    return NodeStatus::SUCCESS;
+}
 
 
 BT::NodeStatus SelfLocate::tick() {
