@@ -133,11 +133,11 @@ void G1Brain::updateBallMemory() {
     // 假设 compute_ball_position 返回 Vec3<double>
     Vec3<double> ball_global = data->computeBallPosition(
         data->rotMatPelvisToGlobal,
-        data->waist_yaw_angle,
-        deg2rad(servo0_deg),
-        -deg2rad(servo1_deg),
+        data->waist_yaw_angle,           // 直接使用弧度值
+        deg2rad(servo0_deg),            // 这是弧度
+        -deg2rad(servo1_deg),           // 这是弧度
         ball_pos_in_cam
-    );
+);
     data->homoMatPelvisToField = homoMatrix(rotMat2D(data->robotPoseToField.theta), Vec2<double>(data->robotPoseToField.x,data->robotPoseToField.y));
     double yaw_to_pelvis =  atan2(data->homoMatBallToWorldAligned(1,3),data->homoMatBallToWorldAligned(0,3));
     double x = data->homoMatBallToWorldAligned(0,3);
@@ -240,7 +240,7 @@ void G1Brain::odomCallback(const std::shared_ptr<unitree_go::msg::SportModeState
 
 
 void G1Brain::lowstateCallback(const std::shared_ptr<robot_interfaces::msg::LowState> msg) {
-    data-> waist_yaw_angle = rad2deg(msg->motor_state[JointIndex::kWaistYaw].states[0].q);  //是否为弧度？
+    data->waist_yaw_angle = msg->motor_state[JointIndex::kWaistYaw].states[0].q;
 
     data->cur_imu.quaternion [0]= msg->imu_state.quaternion[0];
     data->cur_imu.quaternion [1]= msg->imu_state.quaternion[1];
@@ -273,18 +273,29 @@ void G1Brain::joystickCallback(const std::shared_ptr<unitree_go::msg::WirelessCo
     if (keys & 4096) { // 4096 (0x1000) 表示 Up 按钮被按下
         if (keys & 2048) { 
             RCLCPP_INFO(this->get_logger(), "Up and Y buttons state1");
+            tree->setEntry<int>("control_state", 1);
+            this->client->Move(0., 0., 0.);
+            this->client->moveHead(0., 0.);
+            prtDebug("State => 1: CANCEL");
         }
 
         if (keys & 1024) { 
             RCLCPP_INFO(this->get_logger(), "Up and X buttons state2");
+            tree->setEntry<int>("control_state", 2);
+            tree->setEntry<bool>("odom_calibrated", false);
+            prtDebug("State => 2: RECALIBRATE");
         }
 
         if (keys & 256) { 
             RCLCPP_INFO(this->get_logger(), "Up and A buttons state3");
+            tree->setEntry<int>("control_state", 3);
+            prtDebug("State => 3: ENTER");
         }
 
         if (keys & 512) { 
             RCLCPP_INFO(this->get_logger(), "Up and B buttons state4");
+            tree->setEntry<int>("control_state", 4);
+            prtDebug("State => 4: PLAY");
         }
     }
 
@@ -294,7 +305,7 @@ void G1Brain::joystickCallback(const std::shared_ptr<unitree_go::msg::WirelessCo
 void G1Brain::detectionsCallback(const std::shared_ptr<robot_interfaces::msg::DetectionResults> msg) {
 
     //确定servo height 的数值
-    p_eye2base = Pose(0, -config->height , 0 , data->headPitch , -deg2rad(data->waist_yaw_angle) - data->headYaw, 0);
+    p_eye2base = Pose(0, -config->height, 0, data->headPitch, -data->waist_yaw_angle - data->headYaw, 0);
 
     // 1. 解析检测结果
     auto gameObjects = getGameObjects(msg->results, p_eye2base, data->robotPoseToField);

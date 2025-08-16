@@ -1,9 +1,17 @@
 
 #include <algorithm>
-
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
+#include <chrono>
+#include <iostream>
+#include <map>
+#include "common/ut_errror.hpp"
 
 #include "brain.h"
 #include "robot_client.h"
+#include "rclcpp/rclcpp.hpp"
 
 
 void RobotClient::init() 
@@ -49,20 +57,35 @@ void RobotClient::moveHead(double pitch, double yaw) {
 
 void RobotClient::StandUp() {
     unitree_api::msg::Request req;
-    req.header.identity.api_id = ROBOT_SPORT_API_ID_STANDUP;
+    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_FSM_ID; // 使用正确的 API ID
+    nlohmann::json js;
+    js["data"] = 4; // 4 是站立的 FSM ID
+    req.parameter = js.dump();
     req_puber_->publish(req);
 }
 
 void RobotClient::Move(float vx, float vy, float vyaw) {
     unitree_api::msg::Request req;
+    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY; // 使用正确的 API ID
     nlohmann::json js;
-    js["x"] = vx;
-    js["y"] = vy;
-    js["z"] = vyaw;
+    js["velocity"] = {vx, vy, vyaw};
     req.parameter = js.dump();
-    req.header.identity.api_id = ROBOT_SPORT_API_ID_MOVE;
     req_puber_->publish(req);
 }
+
+void RobotClient::ProcessCommand(const std::string &command, const std::vector<float> &params) {
+    if (command == "move" && params.size() == 3) {
+        float vx = params[0];
+        float vy = params[1];
+        float vyaw = params[2];
+        Move(vx, vy, vyaw);
+    } else if (command == "stand_up") {
+        StandUp();
+    } else {
+        std::cerr << "Invalid command or parameters." << std::endl;
+    }
+}
+
 
 int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance)
 {

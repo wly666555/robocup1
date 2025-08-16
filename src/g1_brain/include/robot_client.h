@@ -1,5 +1,12 @@
 #pragma once
 
+#ifndef __UT_ROBOT_G1_LOCO_CLIENT_HPP__
+#define __UT_ROBOT_G1_LOCO_CLIENT_HPP__
+
+#include <cstdint>
+#include <limits>
+#include <rclcpp/node.hpp>
+
 #include <memory>
 #include <iostream>
 #include <string>
@@ -11,6 +18,11 @@
 #include "unitree_api/msg/request.hpp"
 #include "locator.h"
 #include "nlohmann/json.hpp"
+
+#include <nlohmann/detail/exceptions.hpp>
+#include "base_client.hpp"
+#include "common/ut_errror.hpp"
+#include "patch.hpp"
 
 
 
@@ -26,6 +38,7 @@ public:
     void init();
     void moveHead(double pitch, double yaw);
     void StandUp();
+    void ProcessCommand(const std::string &command, const std::vector<float> &params);
 
     int moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance);
     
@@ -39,9 +52,6 @@ private:
 
     G1Brain *brain;
 
-
-
 };
-
 
 
