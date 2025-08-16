@@ -200,7 +200,7 @@ BT::NodeStatus Adjust::tick()
     vx = cap(vx, vxLimit, -vxLimit);
     vy = cap(vy, vyLimit, -vyLimit);
     vtheta = cap(vtheta, vthetaLimit, -vthetaLimit);
-    // brain->client->Move(vx,vy,vtheta);
+    brain->client->Move(vx,vy,vtheta);
 
     return BT::NodeStatus::SUCCESS;
 }
@@ -306,7 +306,7 @@ BT::NodeStatus Chase::tick()
     vtheta = cap(vtheta, vthetaLimit, -vthetaLimit);
 
     
-    // brain->client.Move(vx, vy, vtheta);
+    brain->client.Move(vx, vy, vtheta);
     return BT::NodeStatus::SUCCESS;
 }
 
@@ -412,7 +412,7 @@ BT::NodeStatus Kick::onStart()
     _msecKick = speed > 1e-5 ? minMSecKick + static_cast<int>(brain->data->ball.range / speed * 1000) : minMSecKick;
     
     
-    // brain->client->move(vx, vy, 0);
+    brain->client->move(vx, vy, 0);
     return BT::NodeStatus::SUCCESS;
 }
 
