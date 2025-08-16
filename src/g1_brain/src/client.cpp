@@ -101,3 +101,31 @@ int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double l
     vtheta = cap(target_r.theta, vthetaLimit, -vthetaLimit);
     return Move(vx, vy, vtheta);
 }
+
+
+void RobotClient::Move(float vx, float vy, float vyaw, bool continous_move) 
+{
+    return SetVelocity(vx, vy, vyaw, continous_move ? 864000.F : 1.F);
+}
+void RobotClient::SetVelocity(float vx, float vy, float omega, float duration = 1.F) 
+{
+    unitree_api::msg::Request req;
+    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY;
+    nlohmann::json js;
+    std::vector<float> velocity = {vx, vy, omega};
+    js["velocity"] = velocity;
+    js["duration"] = duration;
+    req.parameter = js.dump();
+    return base_client_.Call(req);
+}
+
+void RobotClient::Move(float vx, float vy, float vyaw) 
+{
+    return Move(vx, vy, vyaw, continous_move_);
+}
+
+
+void RobotClient::StandUp() 
+{ 
+    return SetFsmId(4); 
+}
