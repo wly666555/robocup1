@@ -61,7 +61,7 @@ void RobotClient::StandUp() {
     nlohmann::json js;
     js["data"] = 4; // 4 是站立的 FSM ID
     req.parameter = js.dump();
-    req_puber_->publish(req);
+    return base_client_.Call(req);
 }
 
 void RobotClient::Move(float vx, float vy, float vyaw) {
@@ -70,7 +70,7 @@ void RobotClient::Move(float vx, float vy, float vyaw) {
     nlohmann::json js;
     js["velocity"] = {vx, vy, vyaw};
     req.parameter = js.dump();
-    req_puber_->publish(req);
+    return base_client_.Call(req);
 }
 
 void RobotClient::ProcessCommand(const std::string &command, const std::vector<float> &params) {
@@ -78,9 +78,15 @@ void RobotClient::ProcessCommand(const std::string &command, const std::vector<f
         float vx = params[0];
         float vy = params[1];
         float vyaw = params[2];
-        Move(vx, vy, vyaw);
+        int32_t result = Move(vx, vy, vyaw);
+        if (result != UT_ROBOT_SUCCESS) {
+            std::cerr << "Move command failed with error code: " << result << std::endl;
+        }
     } else if (command == "stand_up") {
-        StandUp();
+        int32_t result = StandUp();
+        if (result != UT_ROBOT_SUCCESS) {
+            std::cerr << "StandUp command failed with error code: " << result << std::endl;
+        }
     } else {
         std::cerr << "Invalid command or parameters." << std::endl;
     }
