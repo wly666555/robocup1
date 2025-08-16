@@ -6,7 +6,7 @@
     <BehaviorTree ID="MainTree">
         <Sequence name="root">
             <ReactiveSequence _while="control_state==2"  name="locate">
-                <CamFindBall  _while="!odom_calibrated"/>
+                <CamScanField  _while="!odom_calibrated"/>
                 <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
                 <SelfLocate mode="enter_field" />
             </ReactiveSequence>
