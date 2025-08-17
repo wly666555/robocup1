@@ -4,7 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <utility>
 
-#include "nlohmann/json.hpp"
+#include <behaviortree_cpp/contrib/json.hpp>
 #include "time_tools.hpp"
 #include "unitree_api/msg/request.hpp"
 #include "unitree_api/msg/response.hpp"
