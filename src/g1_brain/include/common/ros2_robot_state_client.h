@@ -13,7 +13,7 @@
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nlohmann/json.hpp"
+#include <behaviortree_cpp/contrib/json.hpp>
 #include "unitree_api/msg/request.hpp"
 #include "unitree_api/msg/response.hpp"
  

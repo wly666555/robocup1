@@ -323,7 +323,7 @@ int Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D constraintsPar
 
 LocateResult Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D constraintsParam, int numParticles, double offsetXParam, double offsetYParam, double offsetThetaParam)
 {
-    std::cout << "[PF] markers_r.size(): " << markers_r.size() << ", minMarkerCnt: " << minMarkerCnt << std::endl;
+    // std::cout << "[PF] markers_r.size(): " << markers_r.size() << ", minMarkerCnt: " << minMarkerCnt << std::endl;
     
     auto start_time = chr::high_resolution_clock::now();
     LocateResult res;
@@ -357,9 +357,9 @@ LocateResult Locator::locateRobot(vector<FieldMarker> markers_r, PoseBox2D const
     {
         if (isConverged())
         {
-            std::cout << "bestResidual: " << bestResidual<<endl;
+            // std::cout << "bestResidual: " << bestResidual<<endl;
             res.residual = bestResidual / markers_r.size();
-            std::cout << "res.residual: " << res.residual<<endl;
+            // std::cout << "res.residual: " << res.residual<<endl;
             if (res.residual > residualTolerance)
             {       
                 res.success = false;

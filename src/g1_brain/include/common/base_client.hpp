@@ -4,7 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <utility>
 
-#include "nlohmann/json.hpp"
+#include <behaviortree_cpp/contrib/json.hpp>
 #include "time_tools.hpp"
 #include "unitree_api/msg/request.hpp"
 #include "unitree_api/msg/response.hpp"
@@ -19,9 +19,9 @@ class BaseClient {
   std::string topic_name_response_;
   rclcpp::Publisher<Request>::SharedPtr req_puber_;
 
- public:
+public:
   BaseClient(rclcpp::Node* node, const std::string& topic_name_request,
-             std::string topic_name_response)
+            std::string topic_name_response)
       : node_(node),
         topic_name_request_(topic_name_request),
         topic_name_response_(std::move(topic_name_response)),

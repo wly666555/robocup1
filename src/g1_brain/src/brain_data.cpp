@@ -14,10 +14,10 @@ std::vector<FieldMarker> BrainData::getMarkers()
         auto x = markings[i].posToRobot.x;
         auto y = markings[i].posToRobot.y;
         auto confidence = markings[i].confidence;
-        std::cout << "[DEBUG] i=" << i << std::endl;
-        std::cout << "[DEBUG] label: " << markings[i].label << std::endl;
-        std::cout << "[DEBUG] posToRobot: x=" << markings[i].posToRobot.x << " y=" << markings[i].posToRobot.y << std::endl;
-        std::cout << "[DEBUG] confidence: " << markings[i].confidence << std::endl; 
+        // std::cout << "[DEBUG] i=" << i << std::endl;
+        // std::cout << "[DEBUG] label: " << markings[i].label << std::endl;
+        // std::cout << "[DEBUG] posToRobot: x=" << markings[i].posToRobot.x << " y=" << markings[i].posToRobot.y << std::endl;
+        // std::cout << "[DEBUG] confidence: " << markings[i].confidence << std::endl; 
         char markerType = ' ';
         if (label == "L")
             markerType = 'L';

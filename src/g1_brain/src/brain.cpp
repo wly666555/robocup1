@@ -36,7 +36,7 @@ void G1Brain::init() {
     client = std::make_shared<RobotClient>(this);
 
     // 初始化粒子滤波定位器
-    locator->init(config->fieldDimensions, 3, 0.4, 0.5);
+    locator->init(config->fieldDimensions, 4, 0.4, 0.5);
 
     // 构建 BehaviorTree
     tree = std::make_shared<BrainTree>(this); // ← 创建 BrainTree
@@ -223,9 +223,9 @@ void G1Brain::odomCallback(const std::shared_ptr<unitree_go::msg::SportModeState
     // 或者直接用欧拉角yaw
     // data->robotPoseToOdom.theta = msg->imu_state.rpy[2];
 
-    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-        "Odometer information: (%.3f, %.3f, %.3f)",
-        data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta);
+    // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+    //     "Odometer information: (%.3f, %.3f, %.3f)",
+    //     data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta);
 
     transCoord(
         data->robotPoseToOdom.x, data->robotPoseToOdom.y, data->robotPoseToOdom.theta,
@@ -265,7 +265,7 @@ void G1Brain::servoStatesCallback(const std::shared_ptr<robot_interfaces::msg::M
 
 void G1Brain::joystickCallback(const std::shared_ptr<unitree_go::msg::WirelessController> msg){
 
-    RCLCPP_INFO(this->get_logger(), "Wireless controller -- lx: %f; ly: %f; rx: %f; ry: %f; key value: %d",msg->lx, msg->ly, msg->rx, msg->ry, msg->keys);
+    // RCLCPP_INFO(this->get_logger(), "Wireless controller -- lx: %f; ly: %f; rx: %f; ry: %f; key value: %d",msg->lx, msg->ly, msg->rx, msg->ry, msg->keys);
 
     uint16_t keys = msg->keys;
 
@@ -274,28 +274,24 @@ void G1Brain::joystickCallback(const std::shared_ptr<unitree_go::msg::WirelessCo
         if (keys & 2048) { 
             RCLCPP_INFO(this->get_logger(), "Up and Y buttons state1");
             tree->setEntry<int>("control_state", 1);
-            this->client->Move(0., 0., 0.);
+            this->client->SetVelocity(0., 0., 0.);
             this->client->moveHead(0., 0.);
-            prtDebug("State => 1: CANCEL");
         }
 
         if (keys & 1024) { 
             RCLCPP_INFO(this->get_logger(), "Up and X buttons state2");
             tree->setEntry<int>("control_state", 2);
             tree->setEntry<bool>("odom_calibrated", false);
-            prtDebug("State => 2: RECALIBRATE");
         }
 
         if (keys & 256) { 
             RCLCPP_INFO(this->get_logger(), "Up and A buttons state3");
             tree->setEntry<int>("control_state", 3);
-            prtDebug("State => 3: ENTER");
         }
 
         if (keys & 512) { 
             RCLCPP_INFO(this->get_logger(), "Up and B buttons state4");
             tree->setEntry<int>("control_state", 4);
-            prtDebug("State => 4: PLAY");
         }
     }
 

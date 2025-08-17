@@ -13,10 +13,13 @@
 #include "robot_client.h"
 #include "rclcpp/rclcpp.hpp"
 
+RobotClient::RobotClient(G1Brain* argBrain)
+    : brain(argBrain),
+      node_(std::make_shared<rclcpp::Node>("base_client_node")),  // 创建辅助节点
+    base_client_(node_.get(), "/api/sport/request", "/api/sport/response") {}
 
 void RobotClient::init() 
 {
-    req_puber_ = brain->create_publisher<unitree_api::msg::Request>("/api/sport/request", 10);
     cmd_puber_ = brain->create_publisher<robot_interfaces::msg::MotorCmds>("/servo/motor_cmd", 10);
 }
 
@@ -57,7 +60,7 @@ void RobotClient::moveHead(double pitch, double yaw) {
 
 
 
-int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance)
+void RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance)
 {
     Pose2D target_f, target_r; // 移动目标在 field 和 robot 坐标系中的 Pose
     target_f.x = tx;
@@ -72,7 +75,7 @@ int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double l
     if (
         (fabs(brain->data->robotPoseToField.x - target_f.x) < xTolerance) && (fabs(brain->data->robotPoseToField.y - target_f.y) < yTolerance) && (fabs(toPInPI(brain->data->robotPoseToField.theta - target_f.theta)) < thetaTolerance))
     {
-        return Move(0, 0, 0);
+        SetVelocity(0, 0, 0,1.F);
     }
 
     static double breakOscillate = 0.0;
@@ -84,14 +87,14 @@ int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double l
         if (fabs(targetAngle) > turnThreshold)
         {
             vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
-            return Move(0, 0, vtheta);
+            SetVelocity(0, 0, vtheta,84000.F);
         }
 
         // else
 
         vx = cap(target_r.x, vxLimit, -vxLimit);
         vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
-        return Move(vx, 0, vtheta);
+        SetVelocity(vx, 0, vtheta,84000.F);
     }
 
     // else 比较近了
@@ -99,33 +102,64 @@ int RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double l
     vx = cap(target_r.x, vxLimit, -vxLimit);
     vy = cap(target_r.y, vyLimit, -vyLimit);
     vtheta = cap(target_r.theta, vthetaLimit, -vthetaLimit);
-    return Move(vx, vy, vtheta);
+    SetVelocity(vx, vy, vtheta,84000.F);
 }
 
 
-void RobotClient::Move(float vx, float vy, float vyaw, bool continous_move) 
-{
-    return SetVelocity(vx, vy, vyaw, continous_move ? 864000.F : 1.F);
-}
-void RobotClient::SetVelocity(float vx, float vy, float omega, float duration = 1.F) 
-{
+void RobotClient::SetVelocity(float vx, float vy, float omega, float duration) {
     unitree_api::msg::Request req;
     req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY;
+
+    // 构造 JSON 参数
     nlohmann::json js;
     std::vector<float> velocity = {vx, vy, omega};
     js["velocity"] = velocity;
     js["duration"] = duration;
     req.parameter = js.dump();
-    return base_client_.Call(req);
+
+    // 调用 BaseClient::Call 并检查结果
+    nlohmann::json response_data;
+    int32_t result = base_client_.Call(req, response_data);
+
+    if (result != 0) {
+        RCLCPP_ERROR(rclcpp::get_logger("RobotClient"), "SetVelocity failed, error code: %d", result);
+    } else {
+        RCLCPP_INFO(rclcpp::get_logger("RobotClient"), "SetVelocity response: %s", response_data.dump().c_str());
+    }
 }
 
-void RobotClient::Move(float vx, float vy, float vyaw) 
-{
-    return Move(vx, vy, vyaw, continous_move_);
+
+void RobotClient::SetFsmId(int fsm_id) {
+    unitree_api::msg::Request req;
+    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_FSM_ID;
+
+    // 构造 JSON 参数
+    nlohmann::json js;
+    js["data"] = fsm_id;
+    req.parameter = js.dump();
+
+    // 调用 BaseClient::Call 并检查结果
+    nlohmann::json response_data;
+    int32_t result = base_client_.Call(req, response_data);
+
+    if (result != 0) {
+        RCLCPP_ERROR(rclcpp::get_logger("RobotClient"), "SetFsmId failed, error code: %d", result);
+    } else {
+        RCLCPP_INFO(rclcpp::get_logger("RobotClient"), "SetFsmId response: %s", response_data.dump().c_str());
+    }
 }
 
+// void RobotClient::StandUp() {
+//     unitree_api::msg::Request req;
+//     req.header.identity.api_id = ROBOT_API_ID_LOCO_STAND_UP;
 
-void RobotClient::StandUp() 
-{ 
-    return SetFsmId(4); 
-}
+//     // 调用 BaseClient::Call 并检查结果
+//     nlohmann::json response_data;
+//     int32_t result = base_client_.Call(req, response_data);
+
+//     if (result != 0) {
+//         RCLCPP_ERROR(rclcpp::get_logger("RobotClient"), "StandUp failed, error code: %d", result);
+//     } else {
+//         RCLCPP_INFO(rclcpp::get_logger("RobotClient"), "StandUp response: %s", response_data.dump().c_str());
+//     }
+// }

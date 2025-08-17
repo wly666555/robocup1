@@ -5,7 +5,7 @@
 #include <numeric>
 #include <iterator>
 #include <limits>
-
+#include <rclcpp/rclcpp.hpp>
 
 using namespace std;
 
