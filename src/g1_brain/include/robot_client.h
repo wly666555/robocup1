@@ -37,13 +37,52 @@ public:
     void moveHead(double pitch, double yaw);
     void moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance);
     // void Move(float vx, float vy, float vyaw);
-    void SetFsmId(int fsm_id);
-    void SetVelocity(float vx, float vy, float omega, float duration = 1.F);
-    // void StandUp();
+
+    void SetVelocity(float vx, float vy, float omega );
+    
+    void StartVelocityStream(double rate_hz, double hold_sec) {
+        hold_sec_ = hold_sec;
+        auto period = std::chrono::milliseconds(static_cast<int>(1000.0 / rate_hz));
+        timer_ = node_->create_wall_timer(
+        timer_ = node_->create_wall_timer(period,std::bind(&RobotClient::SendOne, this));
+    };
 
 private:
     G1Brain *brain;  // 指向父节点
     rclcpp::Publisher<robot_interfaces::msg::MotorCmds>::SharedPtr cmd_puber_;
     BaseClient base_client_;  // 用于请求-响应处理
+
+    rclcpp::TimerBase::SharedPtr timer_;
+    std::mutex cmd_mtx_;
+    float target_vx_, target_vy_, target_wz_;
+    double hold_sec_;
+    bool has_cmd_;
+
+
+    void SendOne() {
+        float vx, vy, wz;
+        {
+            std::lock_guard<std::mutex> lk(cmd_mtx_);
+            if (!has_cmd_) return;
+            vx = target_vx_;
+            vy = target_vy_;
+            wz = target_wz_;
+        }
+
+        unitree_api::msg::Request req;
+        req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY;
+
+        nlohmann::json js;
+        js["velocity"] = {vx, vy, wz};
+        js["duration"] = hold_sec_; // 持续时间 > 发布周期，作为看门狗
+        req.parameter = js.dump();
+
+        // 异步发送，不阻塞
+        auto future = base_client_.AsyncCall(req);
+    };
+
+
 };
+
+
 

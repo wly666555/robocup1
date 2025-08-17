@@ -69,4 +69,28 @@ public:
     nlohmann::json js;
     return Call(std::move(req), js);
   }
+
+  std::future<Response> AsyncCall(Request req) {
+    using namespace std;
+    auto promise_ptr = make_shared<promise<Response>>();
+    auto future = promise_ptr->get_future();
+
+    req.header.identity.id = unitree::common::GetSystemUptimeInNanoseconds();
+    const auto identity_id = req.header.identity.id;
+
+    // 订阅响应（临时，回调内捕获 promise）
+    auto req_suber_ = node_->create_subscription<Response>(
+      topic_name_response_, rclcpp::QoS(1),
+      [promise_ptr, identity_id, req_suber_](const std::shared_ptr<const Response> data) mutable {
+        if (data->header.identity.id == identity_id) {
+          promise_ptr->set_value(*data);
+          req_suber_.reset();
+        }
+      }
+    );
+    req_puber_->publish(req);
+    return future;
+  };
+
+
 };

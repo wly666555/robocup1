@@ -11,7 +11,7 @@
                   <Sequence  _while="decision == 'kick'">
                      <SetVelocity />
                      <Sleep msec="1000" />
-                     <Kick  min_msec_kick="1000"/>
+                     <Kick />
                   </Sequence>
             </Sequence>
       </ReactiveSequence>

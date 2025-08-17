@@ -16,7 +16,10 @@
 RobotClient::RobotClient(G1Brain* argBrain)
     : brain(argBrain),
       node_(std::make_shared<rclcpp::Node>("base_client_node")),  // 创建辅助节点
-    base_client_(node_.get(), "/api/sport/request", "/api/sport/response") {}
+    base_client_(node_.get(), "/api/sport/request", "/api/sport/response") {
+    // 以 50 Hz 发送，duration 作为看门狗设置为 0.3 s（可按需调整）
+    StartVelocityStream(50.0, 0.3);
+}
 
 void RobotClient::init() 
 {
@@ -106,47 +109,12 @@ void RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double 
 }
 
 
-void RobotClient::SetVelocity(float vx, float vy, float omega, float duration) {
-    unitree_api::msg::Request req;
-    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY;
-
-    // 构造 JSON 参数
-    nlohmann::json js;
-    std::vector<float> velocity = {vx, vy, omega};
-    js["velocity"] = velocity;
-    js["duration"] = duration;
-    req.parameter = js.dump();
-
-    // 调用 BaseClient::Call 并检查结果
-    nlohmann::json response_data;
-    int32_t result = base_client_.Call(req, response_data);
-
-    if (result != 0) {
-        RCLCPP_ERROR(rclcpp::get_logger("RobotClient"), "SetVelocity failed, error code: %d", result);
-    } else {
-        RCLCPP_INFO(rclcpp::get_logger("RobotClient"), "SetVelocity response: %s", response_data.dump().c_str());
-    }
-}
-
-
-void RobotClient::SetFsmId(int fsm_id) {
-    unitree_api::msg::Request req;
-    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_FSM_ID;
-
-    // 构造 JSON 参数
-    nlohmann::json js;
-    js["data"] = fsm_id;
-    req.parameter = js.dump();
-
-    // 调用 BaseClient::Call 并检查结果
-    nlohmann::json response_data;
-    int32_t result = base_client_.Call(req, response_data);
-
-    if (result != 0) {
-        RCLCPP_ERROR(rclcpp::get_logger("RobotClient"), "SetFsmId failed, error code: %d", result);
-    } else {
-        RCLCPP_INFO(rclcpp::get_logger("RobotClient"), "SetFsmId response: %s", response_data.dump().c_str());
-    }
+void RobotClient::SetVelocity(float vx, float vy, float omega) {
+    std::lock_guard<std::mutex> lk(cmd_mtx_);
+    target_vx_ = vx;
+    target_vy_ = vy;
+    target_wz_ = omega;
+    has_cmd_ = true;
 }
 
 // void RobotClient::StandUp() {

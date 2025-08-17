@@ -4,10 +4,25 @@
     <include path="./subtrees/subtree_goal_keeper_play.xml" />
 
     <BehaviorTree ID="MainTree">
-    <Sequence name="root">
-            <ReactiveSequence>
-            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+        <Sequence name="root">
+            <ReactiveSequence _while="control_state==2"  name="locate">
+                <CamScanField  _while="!odom_calibrated"/>
+                <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
+                <SelfLocate mode="enter_field" />
             </ReactiveSequence>
+
+            <ReactiveSequence _while="control_state==3" name="enter">
+                <CamScanField />
+                <MoveToPoseOnField x="-1.0" _while="player_role == 'striker'"     />
+                <MoveToPoseOnField x="-3.5" _while="player_role == 'goal_keeper'" />
+                <SelfLocate mode="trust_direction" />
+            </ReactiveSequence>
+
+            <ReactiveSequence _while="control_state==4" name="play">
+                <SubTree ID="StrikerPlay" _autoremap="true" _while="player_role == 'striker'" />
+                <SubTree ID="GoalKeeperPlay" _autoremap="true" _while="player_role == 'goal_keeper'" />
+            </ReactiveSequence>
+            
         </Sequence>
     </BehaviorTree>
 </root>
