@@ -38,12 +38,11 @@ public:
     void moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance);
     // void Move(float vx, float vy, float vyaw);
 
-    void SetVelocity(float vx, float vy, float omega );
+    void SetVelocity(float vx, float vy, float omega, float duration = 86200.F);
     
     void StartVelocityStream(double rate_hz, double hold_sec) {
         hold_sec_ = hold_sec;
         auto period = std::chrono::milliseconds(static_cast<int>(1000.0 / rate_hz));
-        timer_ = node_->create_wall_timer(
         timer_ = node_->create_wall_timer(period,std::bind(&RobotClient::SendOne, this));
     };
 

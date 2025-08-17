@@ -18,7 +18,7 @@ RobotClient::RobotClient(G1Brain* argBrain)
       node_(std::make_shared<rclcpp::Node>("base_client_node")),  // 创建辅助节点
     base_client_(node_.get(), "/api/sport/request", "/api/sport/response") {
     // 以 50 Hz 发送，duration 作为看门狗设置为 0.3 s（可按需调整）
-    StartVelocityStream(50.0, 0.3);
+    StartVelocityStream(50.0, 1);
 }
 
 void RobotClient::init() 
@@ -109,7 +109,7 @@ void RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double 
 }
 
 
-void RobotClient::SetVelocity(float vx, float vy, float omega) {
+void RobotClient::SetVelocity(float vx, float vy, float omega, float duration) {
     std::lock_guard<std::mutex> lk(cmd_mtx_);
     target_vx_ = vx;
     target_vy_ = vy;

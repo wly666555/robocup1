@@ -18,6 +18,7 @@ class BaseClient {
   std::string topic_name_request_;
   std::string topic_name_response_;
   rclcpp::Publisher<Request>::SharedPtr req_puber_;
+  rclcpp::Subscription<Response>::SharedPtr req_suber_;  // 修正类型
 
 public:
   BaseClient(rclcpp::Node* node, const std::string& topic_name_request,
@@ -34,7 +35,8 @@ public:
     req.header.identity.id = unitree::common::GetSystemUptimeInNanoseconds();
     const auto identity_id = req.header.identity.id;
 
-    auto req_suber_ = node_->create_subscription<Response>(
+    // 临时订阅，不用成员变量
+    auto temp_suber = node_->create_subscription<Response>(
         topic_name_response_, rclcpp::QoS(1),
         [&response_promise,
          identity_id](const std::shared_ptr<const Response> data) {
@@ -78,19 +80,19 @@ public:
     req.header.identity.id = unitree::common::GetSystemUptimeInNanoseconds();
     const auto identity_id = req.header.identity.id;
 
-    // 订阅响应（临时，回调内捕获 promise）
-    auto req_suber_ = node_->create_subscription<Response>(
-      topic_name_response_, rclcpp::QoS(1),
-      [promise_ptr, identity_id, req_suber_](const std::shared_ptr<const Response> data) mutable {
-        if (data->header.identity.id == identity_id) {
-          promise_ptr->set_value(*data);
-          req_suber_.reset();
-        }
-      }
+    std::function<void(const std::shared_ptr<const Response>)> callback =
+        [promise_ptr, identity_id, this](const std::shared_ptr<const Response> data) mutable {
+            if (data->header.identity.id == identity_id) {
+                promise_ptr->set_value(*data);
+                this->req_suber_.reset();
+            }
+        };
+
+    req_suber_ = node_->create_subscription<Response>(
+        topic_name_response_, rclcpp::QoS(1), callback
     );
     req_puber_->publish(req);
     return future;
-  };
-
+  }
 
 };

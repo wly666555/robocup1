@@ -3,9 +3,8 @@ g1_brain_node:
     # 游戏相关参数
     game:
       field_type: "kid_size"
-      playerStartPos: "left"
+      playerStartPos: "right"
       player_role: "striker" # striker | goal_keeper
-
     
     # 机器人相关参数
     robot:
