@@ -16,11 +16,8 @@
 RobotClient::RobotClient(G1Brain* argBrain)
     : brain(argBrain),
       node_(std::make_shared<rclcpp::Node>("base_client_node")),  // 创建辅助节点
-    base_client_(node_.get(), "/api/sport/request", "/api/sport/response") {
-    // 以 50 Hz 发送，duration 作为看门狗设置为 0.3 s（可按需调整）
-    StartVelocityStream(50.0, 1);
-}
-
+    base_client_(node_.get(), "/api/sport/request", "/api/sport/response")
+    
 void RobotClient::init() 
 {
     cmd_puber_ = brain->create_publisher<robot_interfaces::msg::MotorCmds>("/servo/motor_cmd", 10);
@@ -62,8 +59,7 @@ void RobotClient::moveHead(double pitch, double yaw) {
 }
 
 
-
-void RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance)
+int32_t RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double longRangeThreshold, double turnThreshold, double vxLimit, double vyLimit, double vthetaLimit, double xTolerance, double yTolerance, double thetaTolerance)
 {
     Pose2D target_f, target_r; // 移动目标在 field 和 robot 坐标系中的 Pose
     target_f.x = tx;
@@ -78,7 +74,7 @@ void RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double 
     if (
         (fabs(brain->data->robotPoseToField.x - target_f.x) < xTolerance) && (fabs(brain->data->robotPoseToField.y - target_f.y) < yTolerance) && (fabs(toPInPI(brain->data->robotPoseToField.theta - target_f.theta)) < thetaTolerance))
     {
-        SetVelocity(0, 0, 0,1.F);
+        return Move(0, 0, 0);
     }
 
     static double breakOscillate = 0.0;
@@ -90,14 +86,14 @@ void RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double 
         if (fabs(targetAngle) > turnThreshold)
         {
             vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
-            SetVelocity(0, 0, vtheta,84000.F);
+            return Move(0, 0, vtheta);
         }
 
         // else
 
         vx = cap(target_r.x, vxLimit, -vxLimit);
         vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
-        SetVelocity(vx, 0, vtheta,84000.F);
+        return Move(vx, 0, vtheta);
     }
 
     // else 比较近了
@@ -105,29 +101,33 @@ void RobotClient::moveToPoseOnField(double tx, double ty, double ttheta, double 
     vx = cap(target_r.x, vxLimit, -vxLimit);
     vy = cap(target_r.y, vyLimit, -vyLimit);
     vtheta = cap(target_r.theta, vthetaLimit, -vthetaLimit);
-    SetVelocity(vx, vy, vtheta,84000.F);
+    return Move(vx, vy, vtheta);
 }
 
 
-void RobotClient::SetVelocity(float vx, float vy, float omega, float duration) {
-    std::lock_guard<std::mutex> lk(cmd_mtx_);
-    target_vx_ = vx;
-    target_vy_ = vy;
-    target_wz_ = omega;
-    has_cmd_ = true;
+int32_t RobotClient::Move(float vx, float vy, float vyaw, bool continous_move) 
+{
+    return SetVelocity(vx, vy, vyaw, continous_move ? 864000.F : 1.F);
+}
+int32_t RobotClient::SetVelocity(float vx, float vy, float omega, float duration)
+{
+    unitree_api::msg::Request req;
+    req.header.identity.api_id = ROBOT_API_ID_LOCO_SET_VELOCITY;
+    nlohmann::json js;
+    std::vector<float> velocity = {vx, vy, omega};
+    js["velocity"] = velocity;
+    js["duration"] = duration;
+    req.parameter = js.dump();
+    return base_client_.Call(req);
 }
 
-// void RobotClient::StandUp() {
-//     unitree_api::msg::Request req;
-//     req.header.identity.api_id = ROBOT_API_ID_LOCO_STAND_UP;
+int32_t RobotClient::Move(float vx, float vy, float vyaw) 
+{
+    return Move(vx, vy, vyaw, continous_move_);
+}
 
-//     // 调用 BaseClient::Call 并检查结果
-//     nlohmann::json response_data;
-//     int32_t result = base_client_.Call(req, response_data);
 
-//     if (result != 0) {
-//         RCLCPP_ERROR(rclcpp::get_logger("RobotClient"), "StandUp failed, error code: %d", result);
-//     } else {
-//         RCLCPP_INFO(rclcpp::get_logger("RobotClient"), "StandUp response: %s", response_data.dump().c_str());
-//     }
-// }
+int32_t RobotClient::StandUp() 
+{ 
+    return SetFsmId(4); 
+}
