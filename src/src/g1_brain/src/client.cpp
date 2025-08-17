@@ -17,7 +17,8 @@ RobotClient::RobotClient(G1Brain* argBrain)
     : brain(argBrain),
       node_(std::make_shared<rclcpp::Node>("base_client_node")),  // 创建辅助节点
     base_client_(node_.get(), "/api/sport/request", "/api/sport/response")
-    
+{}
+
 void RobotClient::init() 
 {
     cmd_puber_ = brain->create_publisher<robot_interfaces::msg::MotorCmds>("/servo/motor_cmd", 10);
@@ -131,3 +132,5 @@ int32_t RobotClient::StandUp()
 { 
     return SetFsmId(4); 
 }
+
+

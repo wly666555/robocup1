@@ -274,7 +274,7 @@ void G1Brain::joystickCallback(const std::shared_ptr<unitree_go::msg::WirelessCo
         if (keys & 2048) { 
             RCLCPP_INFO(this->get_logger(), "Up and Y buttons state1");
             tree->setEntry<int>("control_state", 1);
-            this->client->SetVelocity(0., 0., 0.);
+            this->client->Move(0., 0., 0.);
             this->client->moveHead(0., 0.);
         }
 

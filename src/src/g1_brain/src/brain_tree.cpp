@@ -50,6 +50,7 @@ void BrainTree::initEntry()
     setEntry<std::string>("decision", "");
     setEntry<std::string>("defend_decision", "chase");
     setEntry<double>("ball_range", 0);
+    setEntry<int>("control_state", 0);
 
 }
 
@@ -89,7 +90,7 @@ BT::NodeStatus SelfLocate::tick() {
     double xMin = 0.0, xMax = 0.0, yMin = 0, yMax = 0.0, thetaMin = 0.0, thetaMax = 0.0; // 结束条件
     auto markers = brain->data->getMarkers();
 
-    std::cout << "[DEBUG] markers.size(): " << markers.size() << std::endl;
+    // std::cout << "[DEBUG] markers.size(): " << markers.size() << std::endl;
     
 
 
@@ -152,7 +153,7 @@ BT::NodeStatus SelfLocate::tick() {
     PoseBox2D constraints{xMin, xMax, yMin, yMax, thetaMin, thetaMax};
     auto res = brain->locator->locateRobot(markers, constraints);
 
-    std::cout << "locate result: res: " << std::to_string(res.code) << " time: " << std::to_string(res.msecs) << std::endl;
+    // std::cout << "locate result: res: " << std::to_string(res.code) << " time: " << std::to_string(res.msecs) << std::endl;
     if (!res.success)
         return NodeStatus::SUCCESS; // Do not block following nodes.
     
@@ -161,7 +162,7 @@ BT::NodeStatus SelfLocate::tick() {
     brain->tree->setEntry<bool>("odom_calibrated", true);
     brain->data->lastSuccessfulLocalizeTime = brain->get_clock()->now();
     
-    std::cout << "locate success: " << std::to_string(res.pose.x) << " " << std::to_string(res.pose.y) << " " << std::to_string(rad2deg(res.pose.theta)) << " Dur: " << std::to_string(res.msecs) << std::endl;
+    // std::cout << "locate success: " << std::to_string(res.pose.x) << " " << std::to_string(res.pose.y) << " " << std::to_string(rad2deg(res.pose.theta)) << " Dur: " << std::to_string(res.msecs) << std::endl;
 
     return BT::NodeStatus::SUCCESS;
 }
@@ -200,7 +201,7 @@ BT::NodeStatus Adjust::tick()
     vx = cap(vx, vxLimit, -vxLimit);
     vy = cap(vy, vyLimit, -vyLimit);
     vtheta = cap(vtheta, vthetaLimit, -vthetaLimit);
-    // brain->client->Move(vx,vy,vtheta);
+    brain->client->Move(vx,vy,vtheta);
 
     return BT::NodeStatus::SUCCESS;
 }
@@ -306,7 +307,7 @@ BT::NodeStatus Chase::tick()
     vtheta = cap(vtheta, vthetaLimit, -vthetaLimit);
 
     
-    // brain->client.Move(vx, vy, vtheta);
+    brain->client->Move(vx, vy, vtheta);
     return BT::NodeStatus::SUCCESS;
 }
 
@@ -314,10 +315,10 @@ CamFindBall::CamFindBall(const std::string& name, const NodeConfig& config, G1Br
     : SyncActionNode(name, config), brain(_brain)
 {
     // 初始化预定义动作
-    double lowPitch = -0.3;
-    double highPitch = 0.6;
-    double leftYaw = 0.85;
-    double rightYaw = -0.85;
+    double lowPitch = -0.25;
+    double highPitch = 0.5;
+    double leftYaw = 0.6;
+    double rightYaw = -0.6;
 
     _cmdSequence[0][0] = lowPitch;
     _cmdSequence[0][1] = leftYaw;
@@ -412,7 +413,7 @@ BT::NodeStatus Kick::onStart()
     _msecKick = speed > 1e-5 ? minMSecKick + static_cast<int>(brain->data->ball.range / speed * 1000) : minMSecKick;
     
     
-    // brain->client->move(vx, vy, 0);
+    brain->client->Move(vx, vy, 0);
     return BT::NodeStatus::SUCCESS;
 }
 
@@ -422,7 +423,7 @@ NodeStatus Kick::onRunning()
         return NodeStatus::RUNNING;
 
     // else
-    // brain->client->move(0, 0, 0);
+    // brain->client->SetVelocity(0, 0, 0);
     return NodeStatus::SUCCESS;
 }
 
