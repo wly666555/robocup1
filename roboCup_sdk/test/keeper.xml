@@ -1,0 +1,26 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <ReactiveSequence name="root_sequence">
+      <camTrackBall  name="camTrackBall"/>
+      <GoalieDecision decision="{decision}" />
+      <Fallback>
+        <Sequence>
+          <CheckDecision expected="GoalieTrackBall" actual="{decision}" />
+          <robotTrackField />
+        </Sequence>
+        <Sequence>
+          <CheckDecision expected="GoalieKickBall" actual="{decision}" />
+          <kick />
+        </Sequence>
+        <Sequence>
+          <CheckDecision expected="GoalieBackToHome" actual="{decision}" />
+          <GoalieBackToHome />
+        </Sequence>
+        <Sequence>
+          <CheckDecision expected="GoalieFindBall" actual="{decision}" />
+          <camFindBall />
+        </Sequence>
+      </Fallback>
+    </ReactiveSequence>
+  </BehaviorTree>
+</root>
