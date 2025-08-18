@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
   registerNode<SetVelocity>(factory, "SetVelocity", &interface);
   registerNode<RobotFindBall>(factory, "RobotFindBall", &interface);
   factory.registerNodeType<CheckDecision>("CheckDecision");
-  factory.registerBehaviorTreeFromFile("/home/unitree/robocup/roboCup_sdk/test/keeper.xml");
+  factory.registerBehaviorTreeFromFile("/home/unitree/robocup/roboCup_sdk/test/striker.xml");
 
   Interface interface(blackboard);
 
@@ -35,7 +35,7 @@ int main(int argc, char const *argv[])
 
   blackboard->setEntry<bool>("ball_location_known", false);
   blackboard->setEntry<std::string>("decision", "");
-  blackboard->setEntry<string>("player_role", "keeper");
+  blackboard->setEntry<string>("player_role", "striker");
   blackboard->setEntry<double>("ball_range", 0.0);
 
 

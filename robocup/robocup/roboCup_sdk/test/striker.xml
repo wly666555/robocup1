@@ -1,27 +1,29 @@
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
-          <ReactiveSequence _while="!odom_calibrated"  name="locate">
-              <CamFindBall />
-              <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
-              <SelfLocate mode="enter_field" />
-          </ReactiveSequence>
 
-          <ReactiveSequence _while="player_role=='striker'" name="/比赛">
-            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
-            <Sequence>
-                  <StrikerDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.2" />
-                  <RobotFindBall _while="decision == 'find'" />
-                  <Chase   _while="decision == 'chase'"   dist="1.0"/>
-                  <Adjust  _while="decision == 'adjust'"    />
-                  <Sequence  _while="decision == 'kick'">
-                     <SetVelocity />
-                     <Sleep msec="1000" />
-                     <Kick />
-                  </Sequence>
-            </Sequence>
-         </ReactiveSequence>
-        
+      <ReactiveSequence _while="player_role=='striker'" name="/比赛">
+        <IfThenElse>
+          <ScriptCondition        name="Do we known the location of the ball?" code="ball_location_known" />
+          <Sequence               name="[Yes] -> track the ball" >
+              <CamTrackBall />
+          </Sequence>
+          <Sequence               name="[No] -> find the ball">
+              <camFindBall />
+          </Sequence>
+        </IfThenElse>
+
+        <Sequence>
+              <StrikerDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.2" />
+              <RobotFindBall _while="decision == 'find'" />
+              <Chase   _while="decision == 'chase'"   dist="1.0"/>
+              <Adjust  _while="decision == 'adjust'"    />
+              <Sequence  _while="decision == 'kick'">
+                <Kick />
+              </Sequence>
         </Sequence>
+      </ReactiveSequence>
+        
+    </Sequence>
   </BehaviorTree>
 </root>

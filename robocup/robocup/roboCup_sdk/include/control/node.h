@@ -116,10 +116,10 @@ private:
     bool firstRun = true;
 };
 
-class camTrackBall : public BT::SyncActionNode
+class CamTrackBall : public BT::SyncActionNode
 {
 public:
-    camTrackBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+    CamTrackBall(const std::string& name, const BT::NodeConfig& config, Interface* interface)
         : BT::SyncActionNode(name, config), _interface(interface)
     {
         counter = 0;
@@ -186,10 +186,10 @@ private:
     string _state;
 };
 
-class kick : public BT::StatefulActionNode
+class Kick : public BT::StatefulActionNode
 {
 public:
-    kick(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+    Kick(const std::string& name, const BT::NodeConfig& config, Interface* interface)
         : BT::StatefulActionNode(name, config), _interface(interface){}
     BT::NodeStatus onStart() override;
     BT::NodeStatus onRunning() override;
@@ -280,10 +280,10 @@ private:
     Interface* _interface;
 };
 
-class setvelocity : public BT::SyncActionNode
+class SetVelocity : public BT::SyncActionNode
 {
 public:
-    setvelocity(const std::string& name, const BT::NodeConfig& config, Interface* interface)
+    SetVelocity(const std::string& name, const BT::NodeConfig& config, Interface* interface)
         : BT::SyncActionNode(name, config), _interface(interface)
     {}
     static PortsList providedPorts()

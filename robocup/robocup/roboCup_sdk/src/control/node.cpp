@@ -84,7 +84,7 @@ BT::NodeStatus MoveToPoseOnField::tick()
     // 已经到达目标?
     if ((fabs(_interface->robotpose2field_x - target_f.x) < xTolerance) && (fabs(_interface->robotpose2field_y - target_f.y) < yTolerance) && (fabs(toPInPI(_interface->robotpose2field_theta - target_f.theta)) < thetaTolerance))
     {
-        _interface->locoClient->Move(0, 0, 0);
+        _interface->locoClient.Move(0, 0, 0);
         return BT::NodeStatus::SUCCESS;
     }
 
@@ -97,14 +97,14 @@ BT::NodeStatus MoveToPoseOnField::tick()
         if (fabs(targetAngle) > turnThreshold)
         {
             vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
-            _interface->locoClient->Move(0, 0, vtheta);
+            _interface->locoClient.Move(0, 0, vtheta);
         }
 
         // else
 
         vx = cap(target_r.x, vxLimit, -vxLimit);
         vtheta = cap(targetAngle, vthetaLimit, -vthetaLimit);
-        _interface->locoClient->Move(vx, 0, vtheta);
+        _interface->locoClient.Move(vx, 0, vtheta);
     }
 
     // else 比较近了
@@ -112,7 +112,7 @@ BT::NodeStatus MoveToPoseOnField::tick()
     vx = cap(target_r.x, vxLimit, -vxLimit);
     vy = cap(target_r.y, vyLimit, -vyLimit);
     vtheta = cap(target_r.theta, vthetaLimit, -vthetaLimit);
-    _interface->locoClient->Move(vx, vy, vtheta);
+    _interface->locoClient.Move(vx, vy, vtheta);
 
     return BT::NodeStatus::SUCCESS;
 }
@@ -125,7 +125,7 @@ BT::NodeStatus SetVelocity::tick()
     getInput("y", y);
     getInput("theta", theta);
 
-    _interface->locoClient->Move(x,y,theta);
+    _interface->locoClient.Move(x,y,theta);
     return BT::NodeStatus::SUCCESS;
 }
 
@@ -174,7 +174,7 @@ BT::NodeStatus Chase::tick()
     config().blackboard->getEntry("ball_location_known", ball_location_known); // 获取黑板中的值
     if(!ball_location_known)
     {
-        _interface->locoClient->Move(0,0,0);
+        _interface->locoClient.Move(0,0,0);
         return BT::NodeStatus::SUCCESS; 
     }
 
@@ -232,7 +232,7 @@ BT::NodeStatus Chase::tick()
 }
 
 
-BT::NodeStatus kick::onStart()
+BT::NodeStatus Kick::onStart()
 {
     _startTime = std::chrono::steady_clock::now(); // 获取当前时间点作为开始时间
 
@@ -265,11 +265,11 @@ BT::NodeStatus kick::onStart()
     double speed = sqrt(vx * vx + vy * vy); // norm(vx, vy)，计算速度
     _msecKick = speed > 1e-5 ? minMSecKick + static_cast<int>(_interface->ball_range_selected / speed * 1000) : minMSecKick;
 
-    _interface->locoClient->Move(vx, vy, 0);
+    _interface->locoClient.Move(vx, vy, 0);
     return BT::NodeStatus::SUCCESS;
 }
 
-BT::NodeStatus kick::onRunning()
+BT::NodeStatus Kick::onRunning()
 {
     // 计算从 _startTime 到现在的时间差
     auto elapsed_time = std::chrono::steady_clock::now() - _startTime;
@@ -281,18 +281,18 @@ BT::NodeStatus kick::onRunning()
     }
 
     // 如果达预期时间，执行完成逻辑
-    _interface->locoClient->Move(0, 0, 0);
+    _interface->locoClient.Move(0, 0, 0);
     return BT::NodeStatus::SUCCESS;
 }
 
-void kick::onHalted()
+void Kick::onHalted()
 {
     // 修改开始时间 `_startTime`，可以用负偏移模仿提前结束的效果
     _startTime -= std::chrono::milliseconds(100); // 让启动时间向前调整 100ms
 }
 
 
-BT::NodeStatus camTrackBall::tick()
+BT::NodeStatus CamTrackBall::tick()
 {
     if(!_interface->ballDetected)
     {
@@ -323,8 +323,6 @@ BT::NodeStatus StrikerDecide::tick()
     getInput("chase_threshold", chaseRangeThreshold);
     string lastDecision ;
     getInput("decision_in", lastDecision);
-    string playerRole;
-    config().blackboard->getEntry("player_role", playerRole);
 
 
     double kickDir = atan2(-_interface->ballPositionInField[0], 4.5 - _interface->ballPositionInField[0]);
@@ -337,7 +335,6 @@ BT::NodeStatus StrikerDecide::tick()
     double ballYaw = _interface->ballYawToPelvist;
 
     string newDecision;
-
 
     bool ball_location_known;
     config().blackboard->getEntry("ball_location_known", ball_location_known); // 获取黑板中的值
@@ -370,8 +367,6 @@ BT::NodeStatus GoalieDecide::tick()
     getInput("chase_threshold", chaseRangeThreshold);
     string lastDecision, position;
     getInput("decision_in", lastDecision);
-    string playerRole;
-    config().blackboard->getEntry("player_role", playerRole);
 
 
     double kickDir = atan2(-_interface->ballPositionInField[0], 4.5 - _interface->ballPositionInField[0]);
@@ -419,7 +414,7 @@ BT::NodeStatus RobotFindBall::onStart()
 {
     if(_interface->ballDetected)
     {
-        _interface->locoClient->Move(0,0,0);
+        _interface->locoClient.Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
     }
     turn_dir = _interface->ballYawToPelvis >0 ? 1.0 : -1.0;
@@ -430,7 +425,7 @@ BT::NodeStatus RobotFindBall::onRunning()
 {
     if(_interface->ballDetected)
     {
-        _interface->locoClient->Move(0,0,0);
+        _interface->locoClient.Move(0,0,0);
         return BT::NodeStatus::SUCCESS;
     }
     double vyawLimit = 1.0;
@@ -438,7 +433,7 @@ BT::NodeStatus RobotFindBall::onRunning()
     double vx = 0;
     double vy = 0;
     double vtheta = 0;
-    _interface->locoClient->Move(0, 0, vyawLimit * turn_dir);
+    _interface->locoClient.Move(0, 0, vyawLimit * turn_dir);
     return BT::NodeStatus::RUNNING;
 }
 void RobotFindBall::onHalted()

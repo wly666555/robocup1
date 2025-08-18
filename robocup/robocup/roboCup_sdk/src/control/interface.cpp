@@ -138,6 +138,7 @@ void Interface::compute_ball_position(RotMat<double>rotMatPelvisToGlobal,double 
         ballDetected_counter = 0;
         ballDetected = true;
         blackboard_->setEntry<bool>("ball_location_known", true); // 设置黑板中的变量
+        blackboard_->setEntry<double>("ball_range", ball_range_selected);
         robotBallAngleToField = atan2(ballPositionInField[1] - robotpose2field_y; ballPositionInField[0] - robotpose2field_x);
     }   
 }

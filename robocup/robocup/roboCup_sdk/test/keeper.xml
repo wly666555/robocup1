@@ -1,28 +1,28 @@
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
-          <ReactiveSequence _while="!odom_calibrated"  name="locate">
-              <CamFindBall />
-              <SubTree ID="CamFindAndTrackBall" _autoremap="true" _while="odom_calibrated" />
-          </ReactiveSequence>
-
-          <ReactiveSequence _while="player_role=='striker" name="/定位成功">
-            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+          <ReactiveSequence _while="player_role=='keeper'" name="/定位成功">
+            <IfThenElse>
+              <ScriptCondition        name="Do we known the location of the ball?" code="ball_location_known" />
+              <Sequence               name="[Yes] -> track the ball" >
+                  <CamTrackBall />
+              </Sequence>
+              <Sequence               name="[No] -> find the ball">
+                  <camFindBall />
+              </Sequence>
+            </IfThenElse>
             <Sequence>
-                  <GoalieDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.2" />
-                  <Sequence _while ="decision == 'find'">
-                    <RobotFindBall _while ="ball_range <= 3.0" />
-                    <MoveToPoseOnField _while ="ball_range > 3.0" long_range_threshold="100.0" x="-6.0" />
-                  </Sequence>
-
-                  <MoveToPoseOnField _while ="decision == 'gohome" long_range_threshold="100.0" x="-6.0" />
-                  <Chase   _while="decision == 'chase'"   dist="1.0"/>
-                  <Adjust  _while="decision == 'adjust'"  />
-                  <Sequence  _while="decision == 'kick'">
-                     <SetVelocity />
-                     <Sleep msec="1000" />
-                     <Kick />
-                  </Sequence>
+              <GoalieDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="1.2" />
+              <Sequence _while ="decision == 'find'">
+                <RobotFindBall _while ="ball_range <= 3.0" />
+                <MoveToPoseOnField _while ="ball_range > 3.0" long_range_threshold="100.0" x="-6.0" />
+              </Sequence>
+              <MoveToPoseOnField _while ="decision == 'gohome'" long_range_threshold="100.0" x="-6.0" />
+              <Chase   _while="decision == 'chase'"   dist="1.0"/>
+              <Adjust  _while="decision == 'adjust'"  />
+              <Sequence  _while="decision == 'kick'">
+                  <Kick />
+              </Sequence>
             </Sequence>
          </ReactiveSequence>
           
